@@ -14,6 +14,14 @@ announced here first.
 
 ## [Unreleased]
 
+### Added
+
+- `doctrine/as-built.md`: the document that describes a system is part of that system, updated in
+  the same change that changes the system. Its second half is the novel part — a document *found*
+  to disagree with the system is corrected in the change that found it, because the evidence is
+  never again as good as at the moment of discovery. An eighth doctrine file, so the counts in
+  `ARCHITECTURE.md`, `README.md` and `START-HERE.md` move with it.
+
 ## [0.2.0] — 2026-09-28
 
 ### Added
