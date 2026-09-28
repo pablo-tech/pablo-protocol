@@ -1,0 +1,12 @@
+# There is no package manifest here — the protocol is bash and markdown, and CONTRIBUTING.md says
+# no new dependencies. The actions the workflow pins are the only thing that can go stale.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    groups:
+      actions:
+        patterns: ["*"]
