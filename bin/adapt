@@ -42,7 +42,8 @@ done
 TENANT="$(cd "$TENANT" && pwd)"
 [ "$TENANT" != "$PROTOCOL" ] || { echo "adapt: the protocol repository is not a tenant" >&2; exit 2; }
 
-say() { printf '  %-6s %s\n' "$1" "$2"; }
+# shellcheck disable=SC1091
+. "$PROTOCOL/bin/tenant.sh"
 
 place() { # src dst — symlink or copy, whichever the run asked for, and never twice
   local src=$1 dst=$2
@@ -60,12 +61,6 @@ seed() { # path — the tenant-template's copy of it, if the tenant has none of 
   mkdir -p "$TENANT/$(dirname "$rel")"
   cp "$PROTOCOL/tenant-template/$rel" "$TENANT/$rel"
   say seed "$rel"
-}
-
-ignore() { # line — in the tenant's .gitignore, once
-  if grep -qxF "$1" "$TENANT/.gitignore" 2>/dev/null; then return; fi
-  printf '%s\n' "$1" >>"$TENANT/.gitignore"
-  say ignore "$1"
 }
 
 echo "protocol: $PROTOCOL"

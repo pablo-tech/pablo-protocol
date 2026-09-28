@@ -52,6 +52,21 @@ git -C "$t/tenant" reset -q
 again="$(adapt --agent claude-code)"
 check "a second run changes nothing" "! grep -qE '^  (link|copy|seed|write|ignore|config) ' <<<\"\$again\""
 
+# A tenant that already refuses a path in a spelling of its own has answered the question, and an
+# ignore rule appended underneath wins as the last matching pattern — so a broader one silently
+# undoes the exception the tenant deliberately keeps.
+fresh
+printf 'projects/*/*\n!projects/*/memory/\n!projects/*/memory/*.md\n' >"$t/tenant/.gitignore"
+adapt --agent claude-code >/dev/null
+mkdir -p "$t/tenant/projects/p/memory"
+printf 'a note\n' >"$t/tenant/projects/p/memory/note.md"
+printf 'transcript\n' >"$t/tenant/projects/p/session.jsonl"
+git -C "$t/tenant" add -A 2>/dev/null
+check "an exception the tenant carved out survives the adapter's own ignore rules" \
+  "git -C '$t/tenant' diff --cached --name-only | grep -qx 'projects/p/memory/note.md' &&
+   ! git -C '$t/tenant' diff --cached --name-only | grep -q session.jsonl"
+git -C "$t/tenant" reset -q
+
 fresh
 printf 'my own rules\n' >"$t/tenant/CLAUDE.md"
 printf '{"permissions":{}}\n' >"$t/tenant/settings.json"
