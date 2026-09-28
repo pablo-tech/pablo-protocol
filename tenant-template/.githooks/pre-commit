@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Thin shim. The guard list is guards.sh's and is never copied here — the one thing a shim decides
+# is WHICH checkout of the protocol it loads, because that choice precedes reading anything from it.
+#
+# In order: an explicit PROTOCOL_GUARDS; the protocol repo itself, which carries its own guards; then
+# the well-known path `bin/adapt` symlinks to whatever clone this machine uses.
+#
+# Enable on a fresh clone:  git config core.hooksPath .githooks
+# Emergency bypass:         git commit --no-verify
+set -uo pipefail
+root="$(git rev-parse --show-toplevel 2>/dev/null)"
+GUARDS="${PROTOCOL_GUARDS:-}"
+[ -n "$GUARDS" ] || { [ -x "$root/guards/guards.sh" ] && GUARDS="$root/guards"; }
+GUARDS="${GUARDS:-${PROTOCOL_DIR:-$HOME/.pablo-protocol}/guards}"
+
+if [ ! -x "$GUARDS/guards.sh" ]; then
+  # Fail closed. Skipping silently is the exact failure these guards exist to prevent: an oversized
+  # blob, a stray secret or another tenant's material reaching history, which costs a rewrite to undo.
+  echo "pre-commit: shared guards not found at $GUARDS/guards.sh"
+  echo "pre-commit:   clone pablo-tech/pablo-protocol and run its bin/adapt,"
+  echo "pre-commit:   or point PROTOCOL_GUARDS at a checkout of its guards/."
+  echo "pre-commit: (bypass: git commit --no-verify)"
+  exit 1
+fi
+
+exec "$GUARDS/guards.sh"

@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# Wire a tenant's context repository to this protocol, and to whichever AI coding agents the
+# machine has. Idempotent: running it twice changes nothing the second time.
+#
+#   bin/adapt                      wire the current directory
+#   bin/adapt --into <dir>         wire that directory
+#   bin/adapt --copy               copy the protocol in instead of symlinking it, for a machine
+#                                  that will not follow symlinks or whose agent config is managed
+#   bin/adapt --agent <name>       wire only these adapters, instead of the ones detected
+#   bin/adapt --list               show which adapters exist and which this machine has
+#
+# What it installs, all of it skipped where it is already there:
+#   <tenant>/protocol          this repository, symlinked (gitignored — a machine-local path)
+#   <tenant>/AGENTS.md         the entry point every agent reads, if the tenant has none
+#   <tenant>/.protocol/tenant  the denylist naming the tenants this repository is not
+#   <tenant>/.githooks/        the pre-commit shim, and core.hooksPath pointed at it
+#   ~/.pablo-protocol          the well-known path the shim falls back to
+set -euo pipefail
+
+PROTOCOL="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+WELL_KNOWN="${PROTOCOL_DIR:-$HOME/.pablo-protocol}"
+TENANT="$PWD"
+MODE="link"
+requested=()
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --into) TENANT="$2"; shift 2 ;;
+    --copy) MODE=copy; shift ;;
+    --agent) requested+=("$2"); shift 2 ;;
+    --list)
+      for dir in "$PROTOCOL"/adapters/*/; do
+        name="$(basename "$dir")"
+        if bash "$dir/detect.sh" >/dev/null 2>&1; then echo "$name (installed)"; else echo "$name"; fi
+      done
+      exit 0 ;;
+    -h|--help) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) echo "adapt: unknown argument: $1" >&2; exit 2 ;;
+  esac
+done
+
+TENANT="$(cd "$TENANT" && pwd)"
+[ "$TENANT" != "$PROTOCOL" ] || { echo "adapt: the protocol repository is not a tenant" >&2; exit 2; }
+
+say() { printf '  %-6s %s\n' "$1" "$2"; }
+
+place() { # src dst — symlink or copy, whichever the run asked for, and never twice
+  local src=$1 dst=$2
+  if [ -e "$dst" ] || [ -L "$dst" ]; then say skip "${dst#$TENANT/}"; return; fi
+  if [ "$MODE" = copy ]; then cp -R "$src" "$dst"; else ln -s "$src" "$dst"; fi
+  say "$MODE" "${dst#$TENANT/}"
+}
+
+seed() { # path — the tenant-template's copy of it, if the tenant has none of its own
+  local rel=$1
+  if [ -e "$TENANT/$rel" ]; then say skip "$rel"; return; fi
+  mkdir -p "$TENANT/$(dirname "$rel")"
+  cp "$PROTOCOL/tenant-template/$rel" "$TENANT/$rel"
+  say seed "$rel"
+}
+
+ignore() { # line — in the tenant's .gitignore, once
+  if grep -qxF "$1" "$TENANT/.gitignore" 2>/dev/null; then return; fi
+  printf '%s\n' "$1" >>"$TENANT/.gitignore"
+  say ignore "$1"
+}
+
+echo "protocol: $PROTOCOL"
+echo "tenant:   $TENANT"
+
+# The well-known path is what a repository's pre-commit shim falls back to, so the shim never has to
+# carry a machine-local path. Left alone if it already points somewhere — that is someone's choice.
+if [ -e "$WELL_KNOWN" ] || [ -L "$WELL_KNOWN" ]; then
+  say skip "${WELL_KNOWN/#$HOME/~}"
+else
+  ln -s "$PROTOCOL" "$WELL_KNOWN"; say link "${WELL_KNOWN/#$HOME/~}"
+fi
+
+place "$PROTOCOL" "$TENANT/protocol"
+ignore "/protocol"
+seed AGENTS.md
+seed .protocol/tenant
+seed .githooks/pre-commit
+chmod +x "$TENANT/.githooks/pre-commit"
+
+if [ -d "$TENANT/.git" ] && [ "$(git -C "$TENANT" config --get core.hooksPath || true)" != ".githooks" ]; then
+  git -C "$TENANT" config core.hooksPath .githooks
+  say config "core.hooksPath=.githooks"
+fi
+
+adapters=()
+if [ ${#requested[@]} -gt 0 ]; then
+  adapters=("${requested[@]}")
+else
+  for dir in "$PROTOCOL"/adapters/*/; do
+    bash "$dir/detect.sh" >/dev/null 2>&1 && adapters+=("$(basename "$dir")")
+  done
+fi
+
+for name in "${adapters[@]}"; do
+  [ -x "$PROTOCOL/adapters/$name/adapt.sh" ] || { echo "adapt: no such adapter: $name" >&2; exit 2; }
+  echo "adapter:  $name"
+  "$PROTOCOL/adapters/$name/adapt.sh" "$TENANT" "$MODE"
+done
+[ ${#adapters[@]} -gt 0 ] || echo "adapter:  none detected — AGENTS.md alone already carries the protocol"
