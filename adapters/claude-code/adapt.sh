@@ -10,6 +10,17 @@ TENANT="$1"; MODE="${2:-link}"
 PROTOCOL="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 say() { printf '  %-6s %s\n' "$1" "$2"; }
 
+# The tenant directory IS the configuration directory, so the agent writes its runtime state into
+# the repository. `projects/` is the one that matters: it holds full session transcripts, which carry
+# every file read and every command run — the most disclosing artifact this design has to keep out of
+# a commit. Ignored before anything else is installed, so a first run cannot stage them.
+for line in '/.claude.json' '/.claude.json.backup' '/.credentials.json' '/backups/' '/file-history/' \
+            '/history.jsonl' '/projects/' '/sessions/' '/shell-snapshots/' '/statsig/' '/todos/'; do
+  if grep -qxF "$line" "$TENANT/.gitignore" 2>/dev/null; then continue; fi
+  printf '%s\n' "$line" >>"$TENANT/.gitignore"
+  say ignore "$line"
+done
+
 mkdir -p "$TENANT/skills"
 for src in "$PROTOCOL"/doctrine/*.md; do
   name="$(basename "$src" .md)"
