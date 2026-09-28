@@ -20,7 +20,7 @@ what a working standard written into one agent's configuration file cannot do, w
 fixes fail, and what this does instead. If the problem it describes is not one you have, stop
 here; the rest will read as machinery without a purpose.
 
-**2. The protocol itself** — [AGENTS.md](AGENTS.md), and then whichever of the seven documents
+**2. The protocol itself** — [AGENTS.md](AGENTS.md), and then whichever of the eight documents
 under [`doctrine/`](doctrine/) is closest to what you actually do. They are opinionated and short.
 They are also the only part of this repository that is normative: everything else exists to
 install or enforce them, which means you can disagree with a doctrine file, rewrite it in your
