@@ -46,9 +46,9 @@ say() { printf '  %-6s %s\n' "$1" "$2"; }
 
 place() { # src dst — symlink or copy, whichever the run asked for, and never twice
   local src=$1 dst=$2
-  if [ -e "$dst" ] || [ -L "$dst" ]; then say skip "${dst#$TENANT/}"; return; fi
+  if [ -e "$dst" ] || [ -L "$dst" ]; then say skip "${dst#"$TENANT"/}"; return; fi
   if [ "$MODE" = copy ]; then cp -R "$src" "$dst"; else ln -s "$src" "$dst"; fi
-  say "$MODE" "${dst#$TENANT/}"
+  say "$MODE" "${dst#"$TENANT"/}"
 }
 
 seed() { # path — the tenant-template's copy of it, if the tenant has none of its own

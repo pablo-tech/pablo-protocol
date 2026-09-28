@@ -27,10 +27,28 @@ if [ -e "$TENANT/CLAUDE.md" ]; then
   grep -q 'AGENTS.md' "$TENANT/CLAUDE.md" || say note "CLAUDE.md exists and does not mention AGENTS.md"
   say skip CLAUDE.md
 else
+  # shellcheck disable=SC2016 # markdown backticks, not command substitution
   printf '%s\n' \
     'Read [AGENTS.md](AGENTS.md) first. It is the entry point for every agent, this one included,' \
     'and it indexes the protocol under `protocol/doctrine/`.' \
     '' \
     'Anything below is true of this tenant alone.' >"$TENANT/CLAUDE.md"
   say write CLAUDE.md
+fi
+
+# The hooks are convenience, not control: they stop one command in one tool and say nothing about a
+# diff written by another agent, by hand or by an IDE. The pre-commit chain is what binds — see
+# doctrine/tenancy.md. `settings-fragment.json` is the one copy of what they are; this writes it
+# whole where there is nothing to overwrite, and otherwise names it, because an adapter that merged
+# into a file someone wrote would be editing it.
+FRAGMENT="$(dirname "${BASH_SOURCE[0]}")/settings-fragment.json"
+if [ -e "$TENANT/settings.json" ]; then
+  if grep -q 'command-guards.sh' "$TENANT/settings.json"; then
+    say skip settings.json
+  else
+    say note "settings.json exists — add the hooks from $FRAGMENT by hand"
+  fi
+else
+  cp "$FRAGMENT" "$TENANT/settings.json"
+  say write settings.json
 fi
