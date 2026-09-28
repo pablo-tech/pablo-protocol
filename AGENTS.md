@@ -45,12 +45,9 @@ credentials live, how its machines are set up — goes in the tenant's own `AGEN
 
 ## Installing it
 
-```
-git clone https://github.com/pablo-tech/pablo-protocol
-cd <your context repository>
-~/path/to/pablo-protocol/bin/adapt
-```
+[`README.md`](README.md#a-new-tenant-end-to-end) walks it end to end, from an empty directory to a
+commit the guards refuse. The short of it is `bin/adapt`, run from inside the tenant, and
+`bin/adapt --list` to see which agents this machine has.
 
-`bin/adapt --list` shows which agents it can wire and which this machine has. It symlinks by default
-and takes `--copy` for a machine that will not follow symlinks or whose agent configuration is
-centrally managed. Running it twice changes nothing the second time.
+What a consumer may rely on, and what counts as a breaking change to it, is
+[`ARCHITECTURE.md`](ARCHITECTURE.md).
