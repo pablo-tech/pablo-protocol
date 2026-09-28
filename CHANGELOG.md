@@ -14,6 +14,8 @@ announced here first.
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-09-28
+
 ### Added
 
 - The public documentation set: `README.md`, `ARCHITECTURE.md`, `START-HERE.md`, `CONTRIBUTING.md`,
@@ -44,6 +46,7 @@ announced here first.
 - The agent's own runtime state — session transcripts above all — is refused by the Claude adapter's
   ignore rules before the first session can write any.
 
-[Unreleased]: https://github.com/pablo-tech/pablo-protocol/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/pablo-tech/pablo-protocol/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/pablo-tech/pablo-protocol/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/pablo-tech/pablo-protocol/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/pablo-tech/pablo-protocol/releases/tag/v0.1.0
