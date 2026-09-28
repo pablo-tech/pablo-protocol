@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Full history: the sign-off check below walks the pull request's own commits, and a shallow
+      # clone does not contain them.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Every suite
+        run: bin/test.sh
+
+      # Every bash script, found rather than listed — the same reason bin/test.sh finds its suites.
+      # Two of them have no .sh extension, so the shebang is what identifies them; the two helpers
+      # that are only ever sourced have no shebang and are reached by -x from the scripts that
+      # source them, which is also what makes their `source=` directives worth carrying.
+      - name: shellcheck
+        run: |
+          mapfile -t scripts < <(git ls-files | while read -r f; do
+            head -c 64 "$f" | grep -qE '^#!.*\b(bash|sh)\b' && printf '%s\n' "$f"
+          done)
+          printf 'checking %d scripts\n' "${#scripts[@]}"
+          shellcheck -x "${scripts[@]}"
+
+      # The repository's own tenancy rule, applied to itself: nothing here may name a tenant, a
+      # machine or an account. --scan-tree reads the terms from .protocol/tenant rather than from a
+      # document that then drifts, which is what makes this a check instead of a review note.
+      - name: No tenant material in the tree
+        run: guards/tenant-guard.sh --scan-tree
+
+      # A step rather than a job, so there is one required check: a job skipped by a job-level `if:`
+      # reports SKIPPED, and a required check that reports SKIPPED blocks the merge forever.
+      - name: Developer Certificate of Origin sign-off
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          missing=0
+          while IFS=$'\t' read -r sha author signoff; do
+            # Bots commit without a sign-off. A required check they cannot satisfy buys an
+            # admin-bypass habit rather than a stronger guarantee — see CONTRIBUTING.md.
+            [[ "$author" == *'[bot]' ]] && continue
+            if [ -z "$signoff" ]; then
+              echo "missing Signed-off-by: $sha ($author)"
+              missing=1
+            fi
+          done < <(git log --format='%H%x09%an%x09%(trailers:key=Signed-off-by,valueonly,separator=%x2C)' "$BASE..$HEAD")
+          if [ "$missing" = 1 ]; then
+            echo
+            echo "Every commit needs a Developer Certificate of Origin sign-off: git commit -s"
+            echo "To fix a branch:  git rebase --signoff $BASE"
+            exit 1
+          fi
+
+  # A tag is a human-readable name for one commit, not a distribution: nothing is published to a
+  # registry, so this cuts a GitHub release and stops. It needs no token beyond the run's own.
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --generate-notes --verify-tag
