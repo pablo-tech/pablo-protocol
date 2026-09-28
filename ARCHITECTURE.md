@@ -6,7 +6,7 @@ a breaking change and is announced as one. Sections are numbered so prose elsewh
 
 ## 1. The protocol is `doctrine/`. Everything else installs it or enforces it
 
-The seven files under `doctrine/` are the only normative content. `AGENTS.md` indexes them.
+The eight files under `doctrine/` are the only normative content. `AGENTS.md` indexes them.
 `guards/`, `bin/` and `adapters/` are mechanism: delete all three and the protocol still exists as
 documents, which is the property the whole design is arranged to preserve.
 

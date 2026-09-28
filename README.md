@@ -151,7 +151,7 @@ entire reason this is a repository.
 | Path | What it is |
 |---|---|
 | [`AGENTS.md`](AGENTS.md) | the entry point an agent reads, indexing the doctrine below |
-| [`doctrine/`](doctrine/) | the protocol itself — seven documents, and nothing else is normative |
+| [`doctrine/`](doctrine/) | the protocol itself — eight documents, and nothing else is normative |
 | [`guards/`](guards/) | the commit-time enforcement: file size, credentials, tenancy |
 | [`bin/adapt`](bin/adapt) | the installer, idempotent, `--copy` for a machine that will not follow symlinks |
 | [`adapters/`](adapters/) | one small directory per AI coding agent, each holding `detect.sh` and `adapt.sh` |
