@@ -30,6 +30,12 @@ failure this repository exists to prevent.
 write, the adapter says so and leaves it. A tool that rewrites a person's instruction file is a tool
 they stop running.
 
+`.gitignore` is the one file an adapter appends to, because the runtime state an agent writes into
+the tenant has to be refused before the first session writes any. The rule still holds there: a
+tenant that already has a rule about that path keeps it, exactly as written. A context repo may
+ignore `projects/*/*` while keeping `projects/*/memory/*.md` tracked, and a broader `/projects/`
+appended underneath would win as the last matching pattern and untrack the memory it meant to keep.
+
 **An adapter carries rules, never a list of repositories.** Where an agent offers a hook, the rule it
 enforces has to be one an unrelated reader would recognise — a flag that defeats a check, a branch
 that takes merges rather than commits. The moment it needs to know which clone is which or which
