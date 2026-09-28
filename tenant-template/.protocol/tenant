@@ -1,0 +1,25 @@
+# Terms belonging to the tenants this repository is NOT. One extended regular expression per line;
+# matched case-insensitively against every staged path and every staged byte. Whole-line comments
+# and blank lines are ignored. A commit staging a match is refused.
+#
+# Write the OTHER tenants, never an allowlist of this one: nobody can enumerate in advance every
+# term their own work will legitimately contain, and a control that refuses unfamiliar material is
+# a control people bypass on the first false refusal.
+#
+# See protocol/doctrine/tenancy.md. An empty file polices nothing, which is the honest state until
+# you have a second tenant.
+
+# Each client, employer or organization this repository is not. Names, product names, domains.
+# Example:  Initech
+#           initech\.example
+
+# Internal codes and planning references that have no business leaving their own repository.
+# The two below exclude a preceding `.`, `/`, `-` or `_`, so a filename extension is not read as a
+# code. Delete them if this tenant has no such convention.
+# (^|[^A-Za-z0-9._/-])W[0-9]{2,3}([^0-9A-Za-z]|$)
+# (^|[^A-Za-z0-9._/-])P[0-9][a-z]?([^0-9A-Za-z]|$)
+
+# Identifier shapes that are always somebody's infrastructure. Uncomment the ones that apply.
+# [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
+# (^|[^0-9.])(10|192\.168)\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}
+# (^|[^0-9])[0-9]{12}([^0-9]|$)
