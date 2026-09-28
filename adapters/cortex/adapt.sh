@@ -5,7 +5,8 @@
 set -euo pipefail
 TENANT="$1"
 HOME_DIR="$TENANT/.agents/cortex"
-say() { printf '  %-6s %s\n' "$1" "$2"; }
+# shellcheck disable=SC1091
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/bin/tenant.sh"
 
 mkdir -p "$HOME_DIR/cortex"
 if [ -e "$HOME_DIR/cortex/settings.json" ]; then
@@ -17,9 +18,7 @@ fi
 
 # Runtime state, not configuration: logs, caches and session tokens are written in here.
 for line in '/.agents/*/cortex/logs/' '/.agents/*/connections.toml'; do
-  if grep -qxF "$line" "$TENANT/.gitignore" 2>/dev/null; then continue; fi
-  printf '%s\n' "$line" >>"$TENANT/.gitignore"
-  say ignore "$line"
+  ignore "$line"
 done
 
 if [ -e "$HOME_DIR/run" ]; then
