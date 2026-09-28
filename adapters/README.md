@@ -19,7 +19,7 @@ A directory under `adapters/` with three files:
 
 `adapt.sh` reports each action as `  <verb> <path>`, two spaces in, so a run reads as one list.
 
-## Two rules the contract exists to hold
+## Three rules the contract exists to hold
 
 **Point the tool at the repository; never copy configuration out of it.** Every agent worth adapting
 has an environment variable that relocates its configuration directory. Use it. An adapter that
@@ -29,6 +29,12 @@ failure this repository exists to prevent.
 **An adapter may create, but never edit.** If the tenant already has the file the adapter would
 write, the adapter says so and leaves it. A tool that rewrites a person's instruction file is a tool
 they stop running.
+
+**An adapter carries rules, never a list of repositories.** Where an agent offers a hook, the rule it
+enforces has to be one an unrelated reader would recognise — a flag that defeats a check, a branch
+that takes merges rather than commits. The moment it needs to know which clone is which or which
+merge publishes a package, it has stopped being protocol and started being somebody's estate, and it
+belongs in the tenant's own hook beside this one.
 
 ## Adding one
 

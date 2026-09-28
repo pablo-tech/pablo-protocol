@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # credentials-guard.sh against the index of a scratch repository, and against its policy files.
 #   bash guards/credentials-guard.test.sh
+# shellcheck disable=SC2016 # the fixtures below are credential literals; a `$` in one is the point
 set -uo pipefail
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 t=$(mktemp -d); trap 'rm -rf "$t"' EXIT

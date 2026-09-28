@@ -35,15 +35,24 @@ check "that symlink resolves through the tenant's own protocol entry" \
   "[ \"\$(readlink -f '$t/tenant/skills/warp/SKILL.md')\" = '$PROTOCOL/doctrine/warp.md' ]"
 check "an agent with no instruction file of its own is pointed at AGENTS.md" \
   "grep -q AGENTS.md '$t/tenant/CLAUDE.md'"
+check "the command guards are registered as hooks" \
+  "grep -q command-guards.sh '$t/tenant/settings.json'"
 
+# shellcheck disable=SC2034 # read inside the check expression below, which shellcheck does not follow
 again="$(adapt --agent claude-code)"
 check "a second run changes nothing" "! grep -qE '^  (link|copy|seed|write|ignore|config) ' <<<\"\$again\""
 
 fresh
 printf 'my own rules\n' >"$t/tenant/CLAUDE.md"
-adapt --agent claude-code >/dev/null
+printf '{"permissions":{}}\n' >"$t/tenant/settings.json"
+# shellcheck disable=SC2034 # as above
+out="$(adapt --agent claude-code)"
 check "an instruction file the tenant already wrote is never edited" \
   "[ \"\$(cat '$t/tenant/CLAUDE.md')\" = 'my own rules' ]"
+# Merging into it would be editing it, so the adapter says what is missing and stops.
+check "nor is a settings file, which is named rather than merged into" \
+  "[ \"\$(cat '$t/tenant/settings.json')\" = '{\"permissions\":{}}' ] &&
+   grep -q 'settings.json exists' <<<\"\$out\""
 
 fresh
 adapt --copy --agent claude-code >/dev/null
