@@ -47,7 +47,10 @@ say() { printf '  %-6s %s\n' "$1" "$2"; }
 place() { # src dst — symlink or copy, whichever the run asked for, and never twice
   local src=$1 dst=$2
   if [ -e "$dst" ] || [ -L "$dst" ]; then say skip "${dst#"$TENANT"/}"; return; fi
-  if [ "$MODE" = copy ]; then cp -R "$src" "$dst"; else ln -s "$src" "$dst"; fi
+  # -L, because --copy exists for a machine that will not follow a symlink: this repository holds one
+  # of its own (the shim it ships is the shim it runs), and copying it as a link would hand that
+  # machine the very thing it cannot read.
+  if [ "$MODE" = copy ]; then cp -RL "$src" "$dst"; else ln -s "$src" "$dst"; fi
   say "$MODE" "${dst#"$TENANT"/}"
 }
 
