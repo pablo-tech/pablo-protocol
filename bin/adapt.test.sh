@@ -37,6 +37,16 @@ check "an agent with no instruction file of its own is pointed at AGENTS.md" \
   "grep -q AGENTS.md '$t/tenant/CLAUDE.md'"
 check "the command guards are registered as hooks" \
   "grep -q command-guards.sh '$t/tenant/settings.json'"
+# The tenant directory is also the agent's configuration directory, so the agent writes its own state
+# into the repository. A session transcript records every file read and command run; committing one
+# would hand over more than any file the guards read.
+mkdir -p "$t/tenant/projects/x"
+printf 'transcript\n' >"$t/tenant/projects/x/session.jsonl"
+printf 'token\n' >"$t/tenant/.credentials.json"
+git -C "$t/tenant" add -A 2>/dev/null
+check "the agent's own transcripts and credentials cannot be staged" \
+  "[ -z \"\$(git -C '$t/tenant' diff --cached --name-only | grep -E '^(projects/|\\.credentials)')\" ]"
+git -C "$t/tenant" reset -q
 
 # shellcheck disable=SC2034 # read inside the check expression below, which shellcheck does not follow
 again="$(adapt --agent claude-code)"
@@ -57,7 +67,8 @@ check "nor is a settings file, which is named rather than merged into" \
 fresh
 adapt --copy --agent claude-code >/dev/null
 check "--copy leaves no symlink for a machine that will not follow one" \
-  "[ ! -L '$t/tenant/protocol' ] && [ ! -L '$t/tenant/skills/warp/SKILL.md' ] && [ -f '$t/tenant/skills/warp/SKILL.md' ]"
+  "[ -z \"\$(find '$t/tenant' -type l -not -path '*/.git/*')\" ] &&
+   [ -f '$t/tenant/skills/warp/SKILL.md' ]"
 
 fresh
 adapt >/dev/null

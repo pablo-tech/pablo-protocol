@@ -8,6 +8,10 @@ Installs into the tenant:
 
 - `skills/<name>/SKILL.md` — a symlink per doctrine file. Claude Code follows symlinked skills.
 - `CLAUDE.md` — a pointer to `AGENTS.md`, written only if the tenant has none.
+- `.gitignore` lines for the agent's own runtime state. The tenant directory *is* the configuration
+  directory, so `projects/`, `sessions/`, `.credentials.json` and the rest are written into the
+  repository. `projects/` holds full session transcripts — every file read and every command run —
+  which makes it the most disclosing thing in the tree and the first thing ignored.
 - `settings.json` — the hooks below, written only if the tenant has none. Where one exists the
   adapter names [`settings-fragment.json`](settings-fragment.json) and stops: merging into a file
   someone wrote is editing it, which no adapter does.
