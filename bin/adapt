@@ -13,6 +13,7 @@
 #   <tenant>/protocol          this repository, symlinked (gitignored — a machine-local path)
 #   <tenant>/AGENTS.md         the entry point every agent reads, if the tenant has none
 #   <tenant>/.protocol/tenant  the denylist naming the tenants this repository is not
+#                              (its untracked `.local` overlay is gitignored, never seeded)
 #   <tenant>/.githooks/        the pre-commit shim, and core.hooksPath pointed at it
 #   ~/.pablo-protocol          the well-known path the shim falls back to
 set -euo pipefail
@@ -34,7 +35,7 @@ while [ $# -gt 0 ]; do
         if bash "$dir/detect.sh" >/dev/null 2>&1; then echo "$name (installed)"; else echo "$name"; fi
       done
       exit 0 ;;
-    -h|--help) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "$0"; exit 0 ;;
     *) echo "adapt: unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -76,6 +77,10 @@ fi
 
 place "$PROTOCOL" "$TENANT/protocol"
 ignore "/protocol"
+# The untracked half of every policy file (§3): the terms a tenant must enforce but must not
+# publish. Ignored before one can exist, because the first `git add -A` after writing one is
+# exactly the mistake the overlay was introduced to make impossible.
+ignore "/.protocol/*.local"
 seed AGENTS.md
 seed .protocol/tenant
 seed .githooks/pre-commit

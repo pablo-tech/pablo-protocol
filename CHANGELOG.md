@@ -16,11 +16,24 @@ announced here first.
 
 ### Added
 
+- **Policy files have a second, untracked layer.** `guards/policy.sh` now reads `.protocol/<name>`
+  and then appends `.protocol/<name>.local`, and either may be absent. This is a change to policy
+  resolution (`ARCHITECTURE.md` §3) and so to the consumer contract, but an additive one: a
+  repository with no `.local` file resolves exactly the list it resolved before, and nothing is
+  refused that was not refused already. It exists because a policy file that is published cannot
+  state what it protects against — the list would be the disclosure — so the tracked file carries
+  the shapes and the categories and the overlay carries the proper nouns. `bin/adapt` gitignores
+  the overlay in every tenant, before one can exist.
 - `doctrine/as-built.md`: the document that describes a system is part of that system, updated in
   the same change that changes the system. Its second half is the novel part — a document *found*
   to disagree with the system is corrected in the change that found it, because the evidence is
   never again as good as at the moment of discovery. An eighth doctrine file, so the counts in
   `ARCHITECTURE.md`, `README.md` and `START-HERE.md` move with it.
+
+### Fixed
+
+- `bin/adapt --help` printed three lines of the script's own source. The help text ended at a line
+  number, and the block it described grew past it.
 
 ## [0.2.0] — 2026-09-28
 
