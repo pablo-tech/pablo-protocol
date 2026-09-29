@@ -14,6 +14,36 @@ announced here first.
 
 ## [Unreleased]
 
+### Added
+
+- **`doctrine/README.md`** — the doctrine's own front door, and the page the directory URL should
+  have opened on all along. It is what each of the eight documents holds you to and why it is
+  shaped that way, which is a different axis from `AGENTS.md`'s table of which one to read before
+  which piece of work, so neither restates the other. Not a doctrine document itself: it carries
+  no `name`/`description` frontmatter, and an adapter walking `doctrine/*.md` now excludes it
+  (`ARCHITECTURE.md` §7) rather than installing a skill no agent could read.
+
+### Changed
+
+- **The README is two named sections instead of five interleaved paragraphs.** *The doctrine*
+  comes first, with all eight rules quoted and two worked out in full; *A doctrine only holds if
+  it travels* carries everything mechanical. The worked example's protagonist changes from an
+  install to a rule — the 25 MB ceiling, from the sentence that states it to the commit the guard
+  refuses — and its anchor moves with it, from `#a-new-tenant-end-to-end` to
+  `#a-rule-from-written-to-enforced`. `AGENTS.md` and `START-HERE.md` are repointed. Documentation
+  only: no guard, policy file or adapter behaviour changes, so a consumer who never moves their
+  pin sees nothing.
+- `START-HERE.md`'s reading track opens on the rules rather than on the argument for why they are
+  a repository, and no longer tells a reader to stop before they have seen one.
+
+### Fixed
+
+- `ARCHITECTURE.md` §1 cited §6 for the check that keeps doctrine tenant-free. §6 is *Environment
+  variables*; the check is §10.
+- The README enumerated seven of the eight skills a tenant gets, omitting `as-built`.
+- `START-HERE.md` gave two counts — "Four paragraphs", "Four limits" — that a reader could
+  falsify by scrolling, and neither was still true.
+
 ## [0.3.0] — 2026-09-29
 
 ### Added
