@@ -204,7 +204,8 @@ what the repository is protecting — [`ARCHITECTURE.md`](ARCHITECTURE.md) §3.
 | [`guards/`](guards/) | the commit-time enforcement: file size, credentials, tenancy |
 | [`bin/adapt`](bin/adapt) | the installer, idempotent, `--copy` for a machine that will not follow symlinks |
 | [`adapters/`](adapters/) | one small directory per AI coding agent, each holding `detect.sh` and `adapt.sh` |
-| [`tenant-template/`](tenant-template/) | the four files a new tenant starts from |
+| [`tenant-template/`](tenant-template/) | the files a new tenant starts from, each one a seed to edit |
+| [`bin/doctor`](bin/doctor) | run inside a tenant: the pin, the symlinks, the hook and the denylist, checked against what is on disk |
 
 A guard reads its policy from a file the *tenant* carries under `.protocol/`, and a guard whose
 policy file is absent exits 0. That is what makes one shared chain safe to point at any checkout:

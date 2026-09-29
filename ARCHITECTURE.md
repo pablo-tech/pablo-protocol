@@ -25,13 +25,14 @@ no machine, no account. §10 is the check that holds this.
 ## 2. The tenant is the unit
 
 A tenant is whoever the work belongs to. Each has one context repository, and that repository
-carries four things, all of which `bin/adapt` installs:
+carries five things, all of which `bin/adapt` installs:
 
 | Path | What it is | Who owns it |
 |---|---|---|
 | `protocol/` | this repository, symlinked; gitignored, being a machine-local path | the installer |
 | `AGENTS.md` | the tenant's own facts, and a pointer to `protocol/AGENTS.md` | the tenant |
 | `.protocol/*` | one file per guard policy the tenant opts into (§3) | the tenant |
+| `.protocol/protocol-version` | the tag of this protocol the tenant consumes (§11) | written on install, moved by the tenant |
 | `.githooks/pre-commit` | the shim that runs `protocol/guards/guards.sh` (§5) | seeded, then the tenant's |
 
 Nothing in this repository knows the name of any tenant, and nothing in a tenant repository is
@@ -88,7 +89,7 @@ document that then drifts.
 The bypass is `git commit --no-verify`, deliberately and universally. A control with no bypass is
 a control that gets uninstalled.
 
-## 5. A shim resolves the guards in three steps, in this order
+## 5. A shim resolves the guards in four steps, in this order
 
 `.githooks/pre-commit` decides *which checkout of the protocol* it loads, and nothing else. That
 choice has to be made before anything can be read from the protocol, which is why it is the one
@@ -96,8 +97,16 @@ decision the shim owns rather than `guards.sh`:
 
 1. `PROTOCOL_GUARDS`, if set — an explicit override, for a checkout under test.
 2. `<repo>/guards/guards.sh`, if it exists — this repository guarding itself.
-3. `${PROTOCOL_DIR:-$HOME/.pablo-protocol}/guards` — the well-known path `bin/adapt` symlinks to
+3. `<repo>/protocol/guards/guards.sh`, if it exists — the checkout this repository's own doctrine
+   is read from, which is the one its pin (§11) names.
+4. `${PROTOCOL_DIR:-$HOME/.pablo-protocol}/guards` — the well-known path `bin/adapt` symlinks to
    whatever clone the machine uses.
+
+Step 3 exists because step 4 is **one path per machine**. A machine holding two tenants at two
+pins has one well-known path between them, so without step 3 one of the two is judged by the
+other's guards — a tenant reading its doctrine from one checkout and being refused, or not
+refused, by another. The tenant's own `protocol/` entry is per tenant and always agrees with what
+that tenant reads.
 
 The well-known path is what keeps a machine-local path out of every tenant's committed hook.
 `bin/adapt` creates it and **never repoints an existing one**: where it already exists, that is
@@ -184,3 +193,22 @@ them individually is the kind of thing that passes its own unit test and is wire
   denylist in a public repository cannot name what it denies — the list would be the disclosure.
   `.protocol/tenant` is exempt from the scan it configures, which is why keeping the names out of
   the tracked half is structural rather than a habit.
+
+## 11. A tenant pins a version, and the pin is a file rather than a fact about a directory
+
+`protocol/` is a symlink. The checkout behind it can be moved to another tag by whoever develops
+this protocol, and no file in the tenant changes — the tenant would read different doctrine and be
+judged by different guards with nothing to see in a diff. `.protocol/protocol-version` is the
+signal: the tag written down, one line, the first that is neither blank nor a whole-line comment.
+
+`bin/adapt` writes that line on install, from `git describe --tags --exact-match` of the checkout
+it is installing, or a `# unpinned` comment when that checkout is not at a tag. It **never
+rewrites an existing value.** Moving a pin means reading what changed, checking the protocol out
+at the new tag, and editing the file — three deliberate acts, rather than a side effect of
+re-running the installer.
+
+`bin/doctor`, run in a tenant, is what compares the two and says so when they disagree. It also
+reports the failures that are otherwise silent because nothing reads them until something else
+fails: a skill symlink whose target has moved, `core.hooksPath` unset in a fresh clone, and a
+`.protocol/tenant` that parses to zero terms. It counts those terms and never prints one, for the
+reason §3 gives.

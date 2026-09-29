@@ -14,6 +14,44 @@ announced here first.
 
 ## [Unreleased]
 
+### Added
+
+- **`.protocol/protocol-version` is part of the tenant contract** (`ARCHITECTURE.md` §11). The
+  tenant's `protocol/` is a symlink, so the checkout behind it can be moved to another tag and no
+  file in the tenant changes: it would read different doctrine and be judged by different guards
+  with nothing to see in a diff. `bin/adapt` now writes the tag it installed from into that file,
+  or a `# unpinned` comment when the checkout is not at one, and **never rewrites an existing
+  value** — moving a pin is reading what changed, checking out, and editing the file, not a side
+  effect of re-running the installer. `tenant-template/` carries the file with its header and no
+  value, so the documented `cp -r tenant-template/. .` install still works.
+- **`bin/doctor`** — what a tenant can check about its own wiring, written once here rather than
+  once per tenant. Four questions, each with a silent wrong answer: the pin against the checkout,
+  every tracked symlink against its target, `core.hooksPath` against a fresh clone that does not
+  carry it, and a `.protocol/tenant` that parses to zero terms. It counts terms and never prints
+  one, for the reason `ARCHITECTURE.md` §3 gives, and reuses `guards/policy.sh` to count them
+  rather than carrying a second parser of the same file.
+
+### Changed
+
+- **The pre-commit shim consults the tenant's own `protocol/guards` before the well-known path**
+  (`ARCHITECTURE.md` §5, now four steps). The well-known path is one per machine, so a machine
+  holding two tenants at two pins had one guard chain between them and one of the two was judged
+  by the other's version. Additive: a tenant with no `protocol/` entry resolves exactly as before.
+- **`bin/adapt` sets `core.hooksPath` when `.git` is a file, not only a directory.** In a worktree
+  or a submodule `.git` is a file, so the shim was installed, never pointed at, and nothing said
+  so — every file present and no guard running.
+- **An adapter's ignore rules are installed as one set, and the "tenant already said something
+  about this path" test runs against the tenant's own lines with that set removed.** Matching on
+  the first path segment alone meant the first rule an adapter wrote silenced every later rule
+  under the same directory: the cortex adapter's `/.agents/*/connections.toml` — the file naming
+  an account and a key path — was never written, because `/.agents/*/cortex/logs/` was written
+  first. The behaviour that rule exists for is unchanged: an exception a tenant carved out for
+  itself is still never buried by a broader pattern appended underneath it.
+- **`bin/adapt --copy` strips the copied `protocol/.git`.** A copy is not a checkout; carrying the
+  `.git` in had git answer about the repository the copy was taken from, so the copy reported
+  whatever that repository is at *now* — a version claim that is worse than no answer, and one
+  `bin/doctor` then has no way to notice.
+
 ## [0.4.0] — 2026-09-29
 
 ### Added

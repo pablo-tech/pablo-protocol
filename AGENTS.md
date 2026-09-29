@@ -37,15 +37,22 @@ including the ones that do not exist yet.
 
 ## What a tenant repository carries
 
-A tenant is whoever the work belongs to. Its context repository carries four things, all of which
+A tenant is whoever the work belongs to. Its context repository carries five things, all of which
 `bin/adapt` installs:
 
 ```
 protocol/            this repository (symlinked; gitignored — it is a machine-local path)
 AGENTS.md            the tenant's own file: its facts, and a pointer to protocol/AGENTS.md
 .protocol/tenant     the terms belonging to the tenants this repository is NOT
+.protocol/protocol-version
+                     the tag of this protocol the tenant consumes; protocol/ is a symlink, so
+                     this is the only thing that changes when the pin moves
 .githooks/pre-commit the shim that runs protocol/guards/guards.sh
 ```
+
+`bin/doctor`, run from inside a tenant, checks those five against what is actually on disk — the
+pin against the checkout, every skill symlink against its target, `core.hooksPath` against a
+clone that does not carry it, and the denylist by term count.
 
 Anything an agent needs that is true of *this tenant only* — which repository owns what, where its
 credentials live, how its machines are set up — goes in the tenant's own `AGENTS.md`, never here.

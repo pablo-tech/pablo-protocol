@@ -15,10 +15,8 @@ PROTOCOL="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # the repository. `projects/` is the one that matters: it holds full session transcripts, which carry
 # every file read and every command run — the most disclosing artifact this design has to keep out of
 # a commit. Ignored before anything else is installed, so a first run cannot stage them.
-for line in '/.claude.json' '/.claude.json.backup' '/.credentials.json' '/backups/' '/file-history/' \
-            '/history.jsonl' '/projects/' '/sessions/' '/shell-snapshots/' '/statsig/' '/todos/'; do
-  ignore "$line"
-done
+ignore '/.claude.json' '/.claude.json.backup' '/.credentials.json' '/backups/' '/file-history/' \
+       '/history.jsonl' '/projects/' '/sessions/' '/shell-snapshots/' '/statsig/' '/todos/'
 
 mkdir -p "$TENANT/skills"
 for src in "$PROTOCOL"/doctrine/*.md; do

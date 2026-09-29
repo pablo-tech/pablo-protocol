@@ -2,8 +2,13 @@
 # Thin shim. The guard list is guards.sh's and is never copied here — the one thing a shim decides
 # is WHICH checkout of the protocol it loads, because that choice precedes reading anything from it.
 #
-# In order: an explicit PROTOCOL_GUARDS; the protocol repo itself, which carries its own guards; then
-# the well-known path `bin/adapt` symlinks to whatever clone this machine uses.
+# In order: an explicit PROTOCOL_GUARDS; the protocol repo itself, which carries its own guards;
+# this repository's own `protocol/` entry, which is the checkout its doctrine is read from; then the
+# well-known path `bin/adapt` symlinks to whatever clone this machine uses.
+#
+# The tenant's own entry comes before the well-known path because the well-known path is one per
+# machine. A machine holding two tenants at two pins cannot serve both from it, and the half that
+# loses is silent: the doctrine read is one version and the guards run are another.
 #
 # Enable on a fresh clone:  git config core.hooksPath .githooks
 # Emergency bypass:         git commit --no-verify
@@ -11,6 +16,7 @@ set -uo pipefail
 root="$(git rev-parse --show-toplevel 2>/dev/null)"
 GUARDS="${PROTOCOL_GUARDS:-}"
 [ -n "$GUARDS" ] || { [ -x "$root/guards/guards.sh" ] && GUARDS="$root/guards"; }
+[ -n "$GUARDS" ] || { [ -x "$root/protocol/guards/guards.sh" ] && GUARDS="$root/protocol/guards"; }
 GUARDS="${GUARDS:-${PROTOCOL_DIR:-$HOME/.pablo-protocol}/guards}"
 
 if [ ! -x "$GUARDS/guards.sh" ]; then

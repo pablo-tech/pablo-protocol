@@ -50,7 +50,7 @@ Two things worth knowing before you start, both of which the example assumes:
   adapter reads `AGENTS.md` like any other file. The example still works.
 - The guards only run once `core.hooksPath` points at the tenant's `.githooks`, which `bin/adapt`
   does for you. Git cannot make that travel with a clone, which is why every fresh clone of every
-  tenant needs the installer run in it once ([ARCHITECTURE.md §5](ARCHITECTURE.md#5-a-shim-resolves-the-guards-in-three-steps-in-this-order)).
+  tenant needs the installer run in it once ([ARCHITECTURE.md §5](ARCHITECTURE.md#5-a-shim-resolves-the-guards-in-four-steps-in-this-order)).
 
 Then run `bin/test.sh`. It is the same suite CI runs, it takes seconds, and watching
 `bin/adapt.test.sh` build a tenant, commit through the installed hook and get refused is the

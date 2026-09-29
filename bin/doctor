@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+# What a tenant can check about its own wiring, written once here rather than once per tenant.
+#
+#   bin/doctor                  check the current directory
+#   bin/doctor --in <dir>       check that directory
+#
+# Four questions, each of which has a silent wrong answer:
+#   the pin        `protocol/` is a symlink, so the checkout behind it can move with nothing changing
+#   the links      a skill whose target has moved still lists, and fails only when something reads it
+#   the hook       core.hooksPath does not travel with a clone, so a fresh clone runs no guards
+#   the tenancy    a denylist that parses to zero terms polices nothing and says nothing about it
+#
+# Exit 1 if anything is wrong. Nothing here prints a policy file's contents: a denylist read
+# backwards is a list of what the repository is protecting, so the terms are counted, never named.
+set -uo pipefail
+
+PROTOCOL="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+TENANT="$PWD"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --in) TENANT="$2"; shift 2 ;;
+    -h|--help) awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "$0"; exit 0 ;;
+    *) echo "doctor: unknown argument: $1" >&2; exit 2 ;;
+  esac
+done
+TENANT="$(cd "$TENANT" && pwd)" || exit 2
+
+fail=0
+ok()   { printf "  ok    %s\n" "$1"; }
+bad()  { printf "  MISS  %s%s\n" "$1" "${2:+  — $2}"; fail=$((fail+1)); }
+note() { printf "  note  %s%s\n" "$1" "${2:+  — $2}"; }
+
+echo "tenant:   $TENANT"
+
+# 1. The pin. A tenant that does not pin is not drifting, so an absent or unfilled file is silence
+# rather than a fault; what is a fault is a file that states a tag the checkout is not at.
+P="$TENANT/protocol"
+V="$TENANT/.protocol/protocol-version"
+want="$(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$V" 2>/dev/null | head -1 | tr -d '[:space:]')"
+if [ ! -d "$P/doctrine" ]; then
+  bad "protocol/ does not resolve to a protocol checkout" "run this repository's bin/adapt from the protocol"
+elif [ -z "$want" ]; then
+  note "protocol not pinned" "write the tag in .protocol/protocol-version"
+elif [ ! -e "$P/.git" ]; then
+  # `bin/adapt --copy` leaves a directory with no history, which nothing can date. Say so once
+  # rather than reporting the pin as broken on every machine that needed the copy.
+  note "protocol is a copy, not a clone" "the pin at $want cannot be checked"
+else
+  have="$(git -C "$P" describe --tags --exact-match 2>/dev/null)"
+  if [ "$have" = "$want" ]; then ok "protocol pinned at $want"
+  elif [ -z "$have" ]; then
+    bad "protocol is not at a tag, pinned to $want" "git -C \"$P\" fetch --tags && git -C \"$P\" checkout $want"
+  else
+    bad "protocol is at $have, pinned to $want" "git -C \"$P\" checkout $want"
+  fi
+fi
+
+# 2. The links. Every adapter installs symlinks into `protocol/`, and one whose target has moved
+# still lists — it fails only when something tries to read it. Tracked links only: those are the ones
+# that travel to another machine, where an untracked dangling link is that machine's own business.
+dead=""
+while IFS= read -r rel; do
+  [ -e "$TENANT/$rel" ] || dead="$dead $rel"
+done < <(git -C "$TENANT" ls-files -s 2>/dev/null | awk '$1 == 120000 {sub(/^[^\t]*\t/, ""); print}')
+if [ -z "$dead" ]; then ok "every tracked link resolves"
+else bad "links pointing at nothing:$dead" "re-run the protocol's bin/adapt, or remove them"; fi
+
+# 3. The hook. `core.hooksPath` is local configuration: a clone carries the shim and runs none of it
+# until something points git at the directory holding it.
+if [ ! -e "$TENANT/.git" ]; then
+  note "not a git repository" "the guards run at commit time and there are no commits here"
+elif [ "$(git -C "$TENANT" config --get core.hooksPath 2>/dev/null || true)" = ".githooks" ]; then
+  ok "core.hooksPath=.githooks"
+else
+  bad "core.hooksPath is not .githooks" "git -C \"$TENANT\" config core.hooksPath .githooks"
+fi
+
+# The shim decides which checkout of the protocol the guards come from, and a tenant that has not
+# re-run bin/adapt since this step was added reads its doctrine from one checkout and runs its guards
+# from another — the well-known path, which is one per machine and cannot serve two pins.
+if [ -x "$P/guards/guards.sh" ] && [ -f "$TENANT/.githooks/pre-commit" ] &&
+   ! grep -q 'protocol/guards' "$TENANT/.githooks/pre-commit"; then
+  bad ".githooks/pre-commit never consults this repository's own protocol/" \
+      "re-run the protocol's bin/adapt, or re-seed the shim from tenant-template/"
+fi
+
+# 4. The tenancy. The count, and only the count. Read through the guards' own policy parser, so
+# what is counted here is what a guard would see rather than a second reading of the same file.
+if [ ! -e "$TENANT/.git" ]; then
+  note "tenancy not read" "policy files are resolved from a repository root"
+elif terms="$(cd "$TENANT" && . "$PROTOCOL/guards/policy.sh" && policy tenant)"; then
+  n="$(printf '%s' "$terms" | grep -c . || true)"
+  if [ "$n" -gt 0 ]; then ok "tenancy declared: $n term(s)"
+  else note "tenancy declares 0 terms" "the guard exits 0 — .protocol/tenant polices nothing yet"; fi
+else
+  note "no .protocol/tenant" "this repository declares no tenancy and is not policed"
+fi
+
+[ "$fail" -eq 0 ] || echo "doctor: $fail problem(s)"
+exit $(( fail > 0 ))

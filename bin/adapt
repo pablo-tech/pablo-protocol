@@ -14,6 +14,8 @@
 #   <tenant>/AGENTS.md         the entry point every agent reads, if the tenant has none
 #   <tenant>/.protocol/tenant  the denylist naming the tenants this repository is not
 #                              (its untracked `.local` overlay is gitignored, never seeded)
+#   <tenant>/.protocol/protocol-version
+#                              the tag of this protocol the tenant consumes, written on install
 #   <tenant>/.githooks/        the pre-commit shim, and core.hooksPath pointed at it
 #   agent configuration        whatever each detected adapter installs — for Claude Code, one skill
 #                              per doctrine file and the commands under adapters/claude-code/
@@ -66,6 +68,33 @@ seed() { # path — the tenant-template's copy of it, if the tenant has none of 
   say seed "$rel"
 }
 
+# The tag this run installed, written into the pin file the seed above leaves empty.
+#
+# `protocol/` is a symlink, so the checkout behind it can be moved on and no file in the tenant
+# changes — a drift with no signal. The pin is that signal, and `bin/doctor` is what reads it back.
+# An existing value is never rewritten: moving a pin is a deliberate act, not a side effect of
+# re-running the installer from whatever the developing checkout happens to be at.
+UNPINNED='# unpinned: installed from a checkout that was not at a tag'
+pin() {
+  local rel=.protocol/protocol-version have
+  if [ -n "$(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$TENANT/$rel" 2>/dev/null)" ]; then
+    say skip "$rel"; return
+  fi
+  have="$(git -C "$PROTOCOL" describe --tags --exact-match 2>/dev/null)" || have=""
+  if [ -n "$have" ]; then
+    printf '%s\n' "$have" >>"$TENANT/$rel"
+    say pin "$have"
+  # A checkout that is not at a tag has nothing to pin to. Saying so in the file beats writing a
+  # commit SHA that reads like a version and answers no question about what moving it would get you,
+  # and it is a comment, so a later run from a tagged checkout still writes the tag underneath it.
+  elif grep -qxF -- "$UNPINNED" "$TENANT/$rel" 2>/dev/null; then
+    say skip "$rel"
+  else
+    printf '%s\n' "$UNPINNED" >>"$TENANT/$rel"
+    say pin "unpinned"
+  fi
+}
+
 echo "protocol: $PROTOCOL"
 echo "tenant:   $TENANT"
 
@@ -78,17 +107,28 @@ else
 fi
 
 place "$PROTOCOL" "$TENANT/protocol"
-ignore "/protocol"
-# The untracked half of every policy file (§3): the terms a tenant must enforce but must not
-# publish. Ignored before one can exist, because the first `git add -A` after writing one is
-# exactly the mistake the overlay was introduced to make impossible.
-ignore "/.protocol/*.local"
+# A copy is not a checkout. Carrying the protocol's own `.git` in would have git answer about the
+# repository the copy was taken from — so the copy would report whatever that repository is at now,
+# which is worse than reporting nothing, and it is `bin/doctor` that then has no way to say so.
+if [ "$MODE" = copy ] && [ ! -L "$TENANT/protocol" ] && [ -e "$TENANT/protocol/.git" ]; then
+  rm -rf "$TENANT/protocol/.git"
+  say strip "protocol/.git"
+fi
+# `/protocol` is a machine-local path. The second is the untracked half of every policy file
+# (§3): the terms a tenant must enforce but must not publish, ignored before one can exist,
+# because the first `git add -A` after writing one is exactly the mistake the overlay was
+# introduced to make impossible.
+ignore "/protocol" "/.protocol/*.local"
 seed AGENTS.md
 seed .protocol/tenant
+seed .protocol/protocol-version
+pin
 seed .githooks/pre-commit
 chmod +x "$TENANT/.githooks/pre-commit"
 
-if [ -d "$TENANT/.git" ] && [ "$(git -C "$TENANT" config --get core.hooksPath || true)" != ".githooks" ]; then
+# `.git` is a file, not a directory, in a worktree and in a submodule. Testing for a directory left
+# the hook installed and never pointed at, and said nothing about it.
+if [ -e "$TENANT/.git" ] && [ "$(git -C "$TENANT" config --get core.hooksPath || true)" != ".githooks" ]; then
   git -C "$TENANT" config core.hooksPath .githooks
   say config "core.hooksPath=.githooks"
 fi
