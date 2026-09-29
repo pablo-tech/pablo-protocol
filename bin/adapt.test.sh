@@ -43,9 +43,14 @@ check "the command guards are registered as hooks" \
 mkdir -p "$t/tenant/projects/x"
 printf 'transcript\n' >"$t/tenant/projects/x/session.jsonl"
 printf 'token\n' >"$t/tenant/.credentials.json"
+# The untracked half of a policy file (§3). It holds the names the tenant must enforce and must not
+# publish, so staging it is the one mistake that undoes the whole reason it is a separate file.
+printf 'Initech\n' >"$t/tenant/.protocol/tenant.local"
 git -C "$t/tenant" add -A 2>/dev/null
 check "the agent's own transcripts and credentials cannot be staged" \
   "[ -z \"\$(git -C '$t/tenant' diff --cached --name-only | grep -E '^(projects/|\\.credentials)')\" ]"
+check "nor can a policy file's untracked overlay" \
+  "[ -z \"\$(git -C '$t/tenant' diff --cached --name-only | grep 'tenant\\.local')\" ]"
 git -C "$t/tenant" reset -q
 
 # shellcheck disable=SC2034 # read inside the check expression below, which shellcheck does not follow
@@ -92,6 +97,11 @@ check "a machine with no adapter still gets the protocol" \
 
 check "the protocol repository refuses to be its own tenant" \
   "! (cd '$PROTOCOL' && HOME='$t/home' bash '$DIR/adapt' >/dev/null 2>&1)"
+
+# The help block is the only documentation of the flags, and it ended at a line number until the
+# block grew past it and --help started printing the script's own source.
+check "--help prints the header and stops there" \
+  "! bash '$DIR/adapt' --help | grep -q 'set -euo'"
 
 # End to end: the shim adapt installed, resolving the guards through the well-known path, running
 # the chain against a real commit. Every link between bin/adapt and guards/tenant-guard.sh at once.

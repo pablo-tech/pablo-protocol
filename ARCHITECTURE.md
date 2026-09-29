@@ -38,6 +38,17 @@ copied from this one except the seeds, which exist to be edited.
 `guards/policy.sh` resolves `.protocol/<name>` relative to the committing repository's root,
 strips whole-line comments and blank lines, and returns non-zero when the file is absent.
 
+A policy has **two layers**, read in that order and concatenated into one list: the tracked
+`.protocol/<name>`, then an untracked `.protocol/<name>.local`. Either may be absent; only both
+being absent is the "no such policy" answer a guard exits 0 on. `bin/adapt` gitignores the overlay
+in every tenant, before one can exist.
+
+The overlay is what lets a policy file survive being published. A list of the terms a repository
+must refuse is, read the other way, a list of what that repository is protecting — so in a
+repository anyone can read, the tracked file states the *shapes* and the *categories*, which are
+safe to publish, and the overlay states the proper nouns, which are not. A guard sees one list and
+cannot tell which layer a term came from, which is the property that keeps this out of every guard.
+
 This is the mechanism that makes one shared guard chain safe to point at any checkout. **A
 repository opts into a rule by carrying the file that configures it, never by being recognised by
 name from inside the guard.** A guard that special-cased a repository name would have to be edited
@@ -50,6 +61,7 @@ The policy files in use:
 | `.protocol/tenant` | `tenant-guard.sh` | extended regular expressions; the terms belonging to the tenants this repository is **not** |
 | `.protocol/credentials-allow-name` | `credentials-guard.sh` | globs exempt from the *shape* rule — a file whose name looks like a credential and holds none |
 | `.protocol/credentials-allow-content` | `credentials-guard.sh` | globs that may *contain* credential-shaped text — the suites whose fixtures pin these rules |
+| `.protocol/<name>.local` | whichever guard reads `<name>` | the untracked overlay, appended to the tracked file of that name |
 
 Comments are whole-line only. A policy line is a path or a regular expression and may legitimately
 contain `#`.
