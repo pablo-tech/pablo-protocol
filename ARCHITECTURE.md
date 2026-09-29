@@ -1,12 +1,16 @@
 # Architecture
 
-This is the contract, not a tour. [README.md](README.md) argues why the repository exists; this
-file states what a consumer may rely on, so that a change which breaks one of these statements is
-a breaking change and is announced as one. Sections are numbered so prose elsewhere can cite §4.
+This is the contract, not a tour. [`doctrine/README.md`](doctrine/README.md) is what the rules
+say, [README.md](README.md) argues why they are a repository rather than a page in an agent's
+configuration file, and this file states what a consumer may rely on — so that a change which
+breaks one of these statements is a breaking change and is announced as one. Sections are numbered
+so prose elsewhere can cite §4.
 
 ## 1. The protocol is `doctrine/`. Everything else installs it or enforces it
 
-The eight files under `doctrine/` are the only normative content. `AGENTS.md` indexes them.
+The eight doctrine documents are the only normative content. `AGENTS.md` indexes them for an
+agent and `doctrine/README.md` for a person; that index is a ninth file in the directory and is
+not itself doctrine (§7).
 `guards/`, `bin/` and `adapters/` are mechanism: delete all three and the protocol still exists as
 documents, which is the property the whole design is arranged to preserve.
 
@@ -16,7 +20,7 @@ is what lets a skill be a symlink to the doctrine file rather than a copy of it.
 key is a breaking change**: it is the contract that makes one file serve two readers.
 
 Doctrine is tenant-free. It may name this repository and its owner and nothing else — no tenant,
-no machine, no account. §6 is the check that holds this.
+no machine, no account. §10 is the check that holds this.
 
 ## 2. The tenant is the unit
 
@@ -131,6 +135,9 @@ An adapter is a directory under `adapters/` holding `detect.sh`, `adapt.sh` and 
   would silently undo an exception the tenant carved out.
 - **An adapter carries rules, never a list of repositories.** The moment it needs to know which
   clone is which, it has stopped being protocol and started being one tenant's context.
+- **`doctrine/README.md` is the directory's index, not a doctrine document**, and an adapter that
+  walks `doctrine/*.md` excludes it. It carries no `name`/`description` frontmatter, so wiring it
+  would install something the agent cannot read.
 
 The guarantee a consumer may rely on: **deleting every adapter leaves the protocol intact.**
 `bin/adapt` runs on a machine with none and says so.

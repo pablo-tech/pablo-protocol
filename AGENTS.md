@@ -4,7 +4,9 @@ This file is the entry point. Every AI coding agent reads `AGENTS.md` from the r
 working in, or can be told to; nothing below depends on which one you are.
 
 **The protocol is these documents. Everything else in this repository exists to install them or to
-enforce them.** Read the one that applies to what you are about to do.
+enforce them.** Each is written as a forcing function rather than as advice: a rule shaped so the
+failure it prevents either cannot happen or announces itself while it is still cheap to fix. Read
+the one that applies to what you are about to do.
 
 | Read this | Before |
 |---|---|
@@ -16,6 +18,10 @@ enforce them.** Read the one that applies to what you are about to do.
 | [`doctrine/as-built.md`](doctrine/as-built.md) | changing how a system works, or finding a document that disagrees with one |
 | [`doctrine/tenancy.md`](doctrine/tenancy.md) | working for more than one tenant from one machine |
 | [`doctrine/llm-output-trust.md`](doctrine/llm-output-trust.md) | changing the model, prompt or thinking mode of a call a human will act on |
+
+That table is which one to open. [`doctrine/README.md`](doctrine/README.md) is the other axis over
+the same eight — what each holds you to, and why it is shaped that way — for reading rather than
+for routing.
 
 ## The two rules that hold the rest together
 
