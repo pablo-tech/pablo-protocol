@@ -31,6 +31,20 @@ for src in "$PROTOCOL"/doctrine/*.md; do
   say "$MODE" "skills/$name"
 done
 
+# Commands are discovered at <config-dir>/commands/<name>.md, and that layout is flat — one level
+# deep, where a skill is two. The link target differs with it: the skills loop above reaches the
+# tenant's `protocol` entry through `../../`, and copying that here gives a dangling link — `-e`
+# fails it, and `-L` then skips it on every run afterwards.
+mkdir -p "$TENANT/commands"
+for src in "$PROTOCOL"/adapters/claude-code/commands/*.md; do
+  name="$(basename "$src" .md)"
+  dst="$TENANT/commands/$name.md"
+  if [ -e "$dst" ] || [ -L "$dst" ]; then say skip "commands/$name"; continue; fi
+  if [ "$MODE" = copy ]; then cp "$src" "$dst"
+  else ln -s "../protocol/adapters/claude-code/commands/$name.md" "$dst"; fi
+  say "$MODE" "commands/$name"
+done
+
 # Claude Code falls back to AGENTS.md, so this file is a pointer rather than a second protocol. It is
 # created only when the tenant has none: an adapter never edits an instruction file someone wrote.
 if [ -e "$TENANT/CLAUDE.md" ]; then
