@@ -24,6 +24,13 @@ announced here first.
   state what it protects against — the list would be the disclosure — so the tracked file carries
   the shapes and the categories and the overlay carries the proper nouns. `bin/adapt` gitignores
   the overlay in every tenant, before one can exist.
+- **The Claude Code adapter installs commands as well as skills**, one symlink per file under
+  `adapters/claude-code/commands/`: `phase-done` (snapshot a phase into its plan document, then
+  `/clear`) and `turn-cost` (what the last turn cost, from real token counts). Both existed only
+  inside one tenant's configuration and would have been rewritten by hand for the next; they are
+  rules about how work is done, so they belong here. The commands layout is flat where the skills
+  one is nested, so the link target is one level shallower — a check pins that, because the wrong
+  depth gives a dangling link that `-e` fails and `-L` then skips on every run afterwards.
 - `PROTOCOL_PROTECTED_BRANCH` (`ARCHITECTURE.md` §6). The two branch-aware command guards held the
   name `main` as a literal in three places each; the branch that takes merges rather than commits is
   a role, and a tenant whose deploy branch is called something else now sets one variable instead of
