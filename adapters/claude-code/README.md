@@ -7,6 +7,8 @@ machine able to serve two tenants.
 Installs into the tenant:
 
 - `skills/<name>/SKILL.md` — a symlink per doctrine file. Claude Code follows symlinked skills.
+- `commands/<name>.md` — a symlink per command in [`commands/`](commands). The layout is flat where
+  the skills one is nested, so the link target is one level shallower.
 - `CLAUDE.md` — a pointer to `AGENTS.md`, written only if the tenant has none.
 - `.gitignore` lines for the agent's own runtime state. The tenant directory *is* the configuration
   directory, so `projects/`, `sessions/`, `.credentials.json` and the rest are written into the

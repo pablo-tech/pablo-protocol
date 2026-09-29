@@ -33,6 +33,16 @@ check "every doctrine file is offered as a skill" \
 check "a skill is a symlink to the doctrine file, not a second copy" "[ -L '$t/tenant/skills/warp/SKILL.md' ]"
 check "that symlink resolves through the tenant's own protocol entry" \
   "[ \"\$(readlink -f '$t/tenant/skills/warp/SKILL.md')\" = '$PROTOCOL/doctrine/warp.md' ]"
+# The commands layout is flat where the skills one is nested, so the link target is one level
+# shallower. Copying the skills loop's `../../` gives a dangling link, which `-e` fails and `-L`
+# then skips forever — the install would report `link` once and never be readable.
+cmds="$PROTOCOL/adapters/claude-code/commands"
+check "every command the adapter carries is offered" \
+  "[ \"\$(ls '$t/tenant/commands' | wc -l)\" = \"\$(ls '$cmds' | wc -l)\" ]"
+check "a command is a symlink, not a second copy" "[ -L '$t/tenant/commands/turn-cost.md' ]"
+check "and it resolves through the tenant's own protocol entry" \
+  "[ \"\$(readlink -f '$t/tenant/commands/turn-cost.md')\" = \\
+    '$PROTOCOL/adapters/claude-code/commands/turn-cost.md' ]"
 check "an agent with no instruction file of its own is pointed at AGENTS.md" \
   "grep -q AGENTS.md '$t/tenant/CLAUDE.md'"
 check "the command guards are registered as hooks" \
@@ -88,7 +98,7 @@ fresh
 adapt --copy --agent claude-code >/dev/null
 check "--copy leaves no symlink for a machine that will not follow one" \
   "[ -z \"\$(find '$t/tenant' -type l -not -path '*/.git/*')\" ] &&
-   [ -f '$t/tenant/skills/warp/SKILL.md' ]"
+   [ -f '$t/tenant/skills/warp/SKILL.md' ] && [ -f '$t/tenant/commands/turn-cost.md' ]"
 
 fresh
 adapt >/dev/null
