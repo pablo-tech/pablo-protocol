@@ -14,6 +14,8 @@ announced here first.
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-09-29
+
 ### Added
 
 - **Policy files have a second, untracked layer.** `guards/policy.sh` now reads `.protocol/<name>`
@@ -96,7 +98,8 @@ announced here first.
 - The agent's own runtime state — session transcripts above all — is refused by the Claude adapter's
   ignore rules before the first session can write any.
 
-[Unreleased]: https://github.com/pablo-tech/pablo-protocol/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/pablo-tech/pablo-protocol/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/pablo-tech/pablo-protocol/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/pablo-tech/pablo-protocol/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/pablo-tech/pablo-protocol/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/pablo-tech/pablo-protocol/releases/tag/v0.1.0
