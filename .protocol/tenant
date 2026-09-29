@@ -2,39 +2,26 @@
 # matched case-insensitively against every staged path and every staged byte. Whole-line comments
 # and blank lines are ignored. See guards/tenant-guard.sh.
 #
-# This repository is the public, tenant-free layer: it may name itself and its owner, and nothing
-# else. Everything below is either a private repository of the estate that extracted it, a machine
-# or account belonging to that estate, or a planning artefact that has no business in a public tree.
-
-# Sibling repositories and products of the estate this was extracted from
-plover-(code|context|keys|factory|skunk|cloudflare|claude)
-tiny-?tars
-promontory
-dokimasia
-pedalion
-lexitar
-akesi
-neuro-pil
-health-dash
-health-reasoning
-(corporate|personal|j0b?)-vault
-fund-category
-
-# Machines, workspaces and accounts
-PabloTech
-omarchy
-\.ts\.net
-
-# Planning artefacts — the references an open-source review otherwise re-greps by hand.
-# The two code shapes exclude a preceding `.`, `/`, `-` or `_` so a filename extension
-# (`.p8`) is not read as a phase code.
-(^|[^A-Za-z0-9._/-])W[0-9]{2,3}([^0-9A-Za-z]|$)
-(^|[^A-Za-z0-9._/-])P[0-9][a-z]?([^0-9A-Za-z]|$)
-docs/cross-app
-roadmap\.md
-monorepo
+# This repository is the tenant-free layer, and it is public, which is what makes this file the one
+# policy that cannot be written the obvious way: a list of the names a repository refuses is, read
+# backwards, a list of what it is protecting. So the names are not here. This tracked half carries
+# the *shapes* an identifier takes and the *words* that name a tenancy at all, both of which are
+# safe to publish; the proper nouns live in an untracked `.protocol/tenant.local` beside it, which
+# the guard appends without being able to tell the two apart (ARCHITECTURE.md §3).
 
 # Identifier shapes that are always somebody's infrastructure
 [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
 (^|[^0-9.])(10|192\.168)\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}
 (^|[^0-9])[0-9]{12}([^0-9]|$)
+
+# The words a tenancy is described with. Doctrine states rules as properties of the design, so a
+# document that reaches for one of these has started arguing from whoever it was extracted from —
+# which is the failure this repository exists to not have. A word used only to forbid itself reads
+# the same to a guard as one used in earnest, so the prohibitions elsewhere say "a tenant, a machine
+# or an account" and this line is why.
+employer
+employment
+\bestate\b
+corporate
+consulting
+day.?job
