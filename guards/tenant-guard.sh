@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Refuse to COMMIT one tenant's material into another tenant's repository.
 #
-# One person works for several tenants — an employer, clients, their own estate — through the same
-# tools, often on the same machine, in the same hour. No AI coding tool can tell which tenant a
-# diff belongs to, and a rule written into one tool's config says nothing about a diff produced by
-# another tool, by an editor, or by hand. The commit is the one boundary every route passes through.
+# One person works for several tenants through the same tools, often on the same machine, in the
+# same hour. No AI coding tool can tell which tenant a diff belongs to, and a rule written into one
+# tool's config says nothing about a diff produced by another tool, by an editor, or by hand. The
+# commit is the one boundary every route passes through.
 #
 # `.protocol/tenant` lists the terms belonging to the OTHER tenants — as extended regular
 # expressions, one per line — and any staged path or staged content matching one is refused. A repo

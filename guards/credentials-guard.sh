@@ -49,9 +49,9 @@ credential_path() { # path
 }
 
 # Path rules alone cannot hold: they know only the locations a secret was expected to land in, and a
-# secret drifts back in by landing somewhere new — a failed spike leaving `tunnel_token.txt` at the
-# repo root, written by a script that would have captured a live token had the API call succeeded.
-# So content is read for every file, not just the expected ones.
+# secret drifts back in by landing somewhere new. A script that captures a live token writes it
+# wherever it was run, under whatever name it was given, and a run that failed part way leaves the
+# file behind anyway. So content is read for every file, not just the expected ones.
 #
 # The PEM pattern requires the literal `-----` delimiters, so prose naming `BEGIN OPENSSH PRIVATE
 # KEY` in backticks reads as documentation rather than as a leak.
@@ -63,9 +63,10 @@ leaks() { # content
   grep -qE -- '-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|xox[baprs]-[A-Za-z0-9-]{10,}|sk-ant-[A-Za-z0-9_-]{20,}|GOCSPX-[A-Za-z0-9_-]{20,}' <<<"$1"
 }
 
-# Those shapes match none of the credentials a rotation list actually names, and a bare assignment is
-# how every one of them gets written down — a live passphrase stated as `PASSPHRASE=<value>` sits in
-# a committed script for months while a shape-only guard reads it and sees nothing.
+# Those shapes only match credentials whose issuer gave them a recognisable prefix, which is a
+# minority. A bare assignment is how every one of the rest gets written down — a live value stated
+# as `PASSPHRASE=<value>` reads as nothing at all to a shape-only guard, for as long as it stays
+# committed.
 #
 # The rule is about the VALUE, never the name. Naming a credential is how a script declares what it
 # needs — `: "${STREAM_TOKEN:?...}"` is correct code — and a guard firing on the name would refuse

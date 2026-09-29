@@ -6,7 +6,7 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "$DIR/../../../bin/check.sh"
 
-guard() { bash "$DIR/push.sh" "$1" "${2:-}"; }
+guard() { bash "$DIR/push.sh" "$1" "${2:-}" "${PROTECTED:-}"; }
 verdict() { case "$(guard "$1" "${2:-}")" in deny\ *) echo deny ;; ask\ *) echo ask ;; *) echo silent ;; esac; }
 # Not `guard | grep`: the guard writes its reason and exits, so a grep that stops at the first line
 # leaves it writing into a closed pipe, and under pipefail that SIGPIPE read as a failed check.
@@ -89,5 +89,16 @@ subject
 
 body mentions git push origin main
 MSG' fix/x)\" = silent ]"
+
+# The branch that takes merges is a role, not the name `main`. The dispatcher resolves the name once
+# and hands it down as $3, so this guard has no literal to be wrong about.
+PROTECTED=release
+check "the protected branch is whichever one the dispatcher names" \
+  "[ \"\$(verdict 'git push origin release' topic)\" = deny ]"
+check "and the denial names it" "says 'git push origin release' topic 'release takes merges'"
+check "while main is then an ordinary branch" \
+  "[ \"\$(verdict 'git push origin main' topic)\" = silent ]"
+check "a bare push from it is still the deploy" "[ \"\$(verdict 'git push' release)\" = deny ]"
+PROTECTED=
 
 finish

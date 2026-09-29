@@ -5,8 +5,8 @@ description: Working for more than one tenant from one set of tools — what a t
 
 # Tenancy
 
-A **tenant** is whoever the work belongs to: an employer, a client, a foundation, yourself. One
-person routinely works for several, through the same tools, on the same machine, in the same hour.
+A **tenant** is whoever the work belongs to. One person routinely works for several, through the
+same tools, on the same machine, in the same hour.
 The protocol is shared across all of them. The *content* — plans, notes, names, identifiers,
 infrastructure — belongs to exactly one, and must not reach another.
 
@@ -34,9 +34,14 @@ the allowlist cannot be written: nobody can enumerate in advance every term thei
 legitimately contain, and a control that refuses unfamiliar material is a control people bypass on
 the first false refusal. A denylist of the tenants you actually have is both short and complete.
 
-It absorbs a second job for free. Any review that would otherwise ask a human to grep for planning
-references, internal codes or infrastructure identifiers before publishing can state those as
-patterns instead, and the recurring chore becomes a gate.
+The same declaration does a second job. A review that would otherwise ask a human to grep for
+planning references, internal codes or infrastructure identifiers before publishing can state those
+as patterns instead, and the recurring chore becomes a gate.
+
+A repository that will itself be read by others carries the terms in an untracked
+`.protocol/<name>.local` beside the tracked file, which the guard appends to it. A denylist read
+backwards is a list of what the repository is protecting, so a published one states the shapes and
+the categories and leaves the proper nouns on the machine that needs them.
 
 ## The four controls, in order of what carries weight
 
@@ -50,9 +55,10 @@ patterns instead, and the recurring chore becomes a gate.
    a launcher that exports every installed agent's configuration-directory variable from it. One
    mechanism, every agent, and the agents keep separate accounts, histories and caches. This is
    hygiene and convenience; it is not a security boundary against the machine's owner.
-4. **A separate operating-system user, or a virtual machine.** The escalation, and the trigger is
-   specific: if a machine you previously owned outright comes under someone else's device
-   management, control 3 stops being sufficient and the tenant moves behind a real boundary.
+4. **A separate operating-system user, or a virtual machine.** The escalation. Its trigger is
+   specific: where a machine's configuration is not the tenant's to set — device management, backup
+   software and administrative access all read the disk — control 3 stops being sufficient and the
+   tenant moves behind a real boundary.
 
 The ordering matters more than the list. A great deal of effort is commonly spent on 3 while 1 is
 quietly violated, which buys nothing.

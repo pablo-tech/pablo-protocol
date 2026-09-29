@@ -8,21 +8,20 @@ roll and belonged to none of its contents.*
 [![Community Health](https://img.shields.io/badge/dynamic/json?url=https://api.github.com/repos/pablo-tech/pablo-protocol/community/profile&query=$.health_percentage&suffix=%25&label=community%20health)](https://github.com/pablo-tech/pablo-protocol/community)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-You wrote down how you work — that a plan states its objective before its context, that a test
-must be able to fail, that large files never enter history — and you wrote it in the file your AI
-coding agent reads. It worked. Then it stopped scaling in two directions at once.
+A working standard — that a plan states its objective before its context, that a test must be able
+to fail, that large files never enter history — is usually written into the file an AI coding agent
+reads. That is the one place it cannot hold, and it gives way in two directions at once.
 
-**It stopped being portable across agents.** The file is named for one vendor's tool. A second
-agent on the same machine reads nothing, so you copy the rules into its configuration too, and now
-the same rule exists twice and drifts. Worse, the rules only ever bound *that* agent: a diff
-written by a different agent, by an editor, or by hand passes every one of them untouched.
+**It is not portable across agents.** The file is named for one vendor's tool. A second agent on
+the same machine reads nothing, so the rules are copied into its configuration too, and the same
+rule now exists twice and drifts. Worse, the rules only ever bound *that* agent: a diff written by
+a different agent, by an editor, or by hand passes every one of them untouched.
 
-**It stopped being separable from one employer.** The same file that holds *how work is done*
-holds *whose work it is* — which repositories exist, where credentials live, which client is
-which. The moment a second tenant appears, a day job whose machine you do not own, there is no way
-to hand over the first half without the second. And there is no mechanism stopping you from
-committing one tenant's plan into another tenant's repository by accident, because no tool on the
-machine knows the difference.
+**It is not separable from the work it was written beside.** The same file that holds *how work is
+done* holds *whose work it is* — which repositories exist, where credentials live, which account is
+which. The moment the standard is worth having in a second place, there is no way to hand over the
+first half without the second. And nothing stops one tenant's material landing in another tenant's
+history by ordinary mistake, because no tool on the machine knows the difference.
 
 The obvious fixes each fail:
 
@@ -41,7 +40,7 @@ still reads it when told to, because it is prose. The guards are shell scripts t
 repository's `pre-commit` hook, which is the one gate every route to history passes through —
 whichever agent, editor or hand wrote the diff.
 
-Nothing here knows who you are. A **tenant** — an employer, a client, your own estate — keeps its
+Nothing here knows who you are. A **tenant** — whoever a given body of work belongs to — keeps its
 own context repository with its own facts and its own denylist, and installs this one into it.
 Two tenants share every word of the protocol and not one word about each other.
 
@@ -69,17 +68,16 @@ copy configuration out of it. Delete every adapter and the protocol is intact �
 The worked example is not "how to install this." It is the argument for why the protocol is a
 separate repository with a guard attached, rather than a well-written page in your agent's config.
 
-**Scenario.** You consult for your own clients and you have taken a day job. Both run on your own
-machine, through the same tools, often in the same hour. The consulting context repository holds
-client names, account identifiers and plans. The day job's repository must contain none of that —
-and, on the laptop the employer manages, neither must anything else of yours.
+**Scenario.** Two tenants, one machine, one set of tools, often in the same hour. Each keeps a
+context repository holding its own names, identifiers and plans, and neither repository may contain
+a word of the other's.
 
 **Before — both obvious options fail.** Put the working standard in each repository's agent
 configuration and you maintain two copies that drift, which is how a rule quietly stops being
-enforced in one of them. Keep one shared configuration for both and the consulting facts are
-present in the day job's sessions — on hardware you do not control. And in either arrangement,
-nothing stops the commit: an agent working in the corporate repository will happily write a plan
-that mentions a client, because to that agent it is just text you were discussing.
+enforced in one of them. Keep one shared configuration for both and each tenant's facts are present
+in the other's sessions, including on any machine whose configuration is not yours to set. And in
+either arrangement, nothing stops the commit: an agent working in one tenant's repository will
+happily write a plan that names the other, because to that agent it is just text under discussion.
 
 **After.**
 
@@ -88,7 +86,7 @@ that mentions a client, because to that agent it is just text you were discussin
    and the directory they live in.
 
    ```bash
-   git init work-context && cd work-context
+   git init my-context && cd my-context
    cp -r ~/pablo-protocol/tenant-template/. .
    ```
 
@@ -105,8 +103,8 @@ that mentions a client, because to that agent it is just text you were discussin
    each one. Run it twice and the second run prints `skip` for every line.
 
 3. **Declare who this tenant is not.** `.protocol/tenant` takes one extended regular expression
-   per line — your clients' names, your own estate's repository names, the identifier shapes that
-   are always somebody's infrastructure:
+   per line — the other tenants' names, their repository and product names, the identifier shapes
+   that are always somebody's infrastructure:
 
    ```
    initech
@@ -117,14 +115,19 @@ that mentions a client, because to that agent it is just text you were discussin
    in advance every term their own work will legitimately contain, and a control that refuses
    unfamiliar material is a control people bypass on the first false refusal.
 
+   A repository that will itself be read by others carries the names in an untracked
+   `.protocol/tenant.local` instead, appended to the tracked file. A denylist read backwards is a
+   list of what the repository is protecting, so a published one states shapes and leaves the
+   proper nouns on the machine — [`ARCHITECTURE.md`](ARCHITECTURE.md) §3.
+
 4. **Watch the same file load in two different agents.** With the tenant as the configuration
    directory, one agent lists `warp`, `planning`, `git`, `clean-code`, `testing`, `tenancy` and
    `llm-output-trust` as skills. Point a second agent at its own adapter directory and it reads
    the identical files. There is no second copy to keep in sync, because step 2 made links, not
    copies — and an agent with no adapter at all still gets the protocol, as `AGENTS.md`.
 
-5. **Try to commit the thing that must not be committed.** Write a note in the day job's
-   repository that mentions a consulting client, and commit it:
+5. **Try to commit the thing that must not be committed.** Write a note in this tenant's
+   repository that names one of the others, and commit it:
 
    ```
    pre-commit: refusing to commit another tenant's material into this repository:
@@ -176,11 +179,11 @@ doctrine file is a copy, and it goes stale the moment the protocol moves. Re-run
 is the only thing that refreshes it, and nothing reminds you.
 
 **A denylist is a filter, not a proof.** It catches the terms you thought to write down, spelled
-the way you wrote them. It will not catch a client described without naming them, a paraphrased
+the way you wrote them. It will not catch a tenant described without naming it, a paraphrased
 figure, or a screenshot. `--scan-tree` narrows this by auditing the whole tree rather than one
 diff, and `--no-verify` widens it back to nothing.
 
-**Permission rules constrain an agent, not an employer.** An adapter can tell one tool which
+**Permission rules constrain an agent, not a machine's owner.** An adapter can tell one tool which
 commands to refuse. It cannot stop device management software, a backup agent, or anyone with
 administrative access to a machine from reading what is on its disk.
 

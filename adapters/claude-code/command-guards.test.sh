@@ -35,6 +35,21 @@ check "the branch the command acts on is resolved from the repository, not the c
   "[ \"\$(decision 'git push' \"\$t/main\")\" = deny ] && [ -z \"\$(hook 'git push' \"\$t/topic\")\" ]"
 check "and from the -C path when the command names one" \
   "[ \"\$(decision \"git -C \$t/main cherry-pick abc123\" \"\$t/topic\")\" = deny ]"
+
+# `main` is the default name for the branch that takes merges, never the rule itself. A tenant whose
+# deploy branch is called something else sets the variable, and that one name has to reach both the
+# resolution above and every guard below — a guard holding its own literal would be the copy that
+# drifts.
+git init -q -b release "$t/release"
+git -C "$t/release" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init
+protected_hook() { (export PROTOCOL_PROTECTED_BRANCH="$1"; shift; hook "$@"); }
+pdecision() { protected_hook "$@" | field permissionDecision; }
+check "the protected branch is configurable, and the name reaches the guards" \
+  "[ \"\$(pdecision release 'git push' \"\$t/release\")\" = deny ]"
+check "and main is then an ordinary branch" \
+  "[ -z \"\$(protected_hook release 'git push' \"\$t/main\")\" ]"
+check "a checkout in the line is read against that name too" \
+  "[ \"\$(pdecision release 'git checkout release && git push' \"\$t/topic\")\" = deny ]"
 # A guarded command quoted inside some other tool's input is text, not a command.
 check "a tool that is not Bash is not this hook's business" \
   "[ -z \"\$(jq -cn '{tool_name: \"Write\", tool_input: {content: \"git push --force\"}}' | bash '$DIR/command-guards.sh')\" ]"
