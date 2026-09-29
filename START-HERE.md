@@ -1,7 +1,7 @@
 # Start here
 
-Nine documents is more than anyone reads in order, and two different people arrive here wanting
-different things. This page routes you and then gets out of the way.
+Eight doctrine documents is more than anyone reads in order, and two different people arrive here
+wanting different things. This page routes you and then gets out of the way.
 
 **Its one rule: nothing is explained twice.** Where this file would restate a mechanism, it links
 to the document that owns it. If you find an explanation here that also exists elsewhere, that is

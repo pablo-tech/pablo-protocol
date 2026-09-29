@@ -15,13 +15,13 @@ That is the minimum one agent's skill format requires and it is inert to every o
 is what lets a skill be a symlink to the doctrine file rather than a copy of it. **Adding a third
 key is a breaking change**: it is the contract that makes one file serve two readers.
 
-Doctrine is tenant-free. It may name this repository and its owner and nothing else — no client,
-no employer, no machine, no account. §6 is the check that holds this.
+Doctrine is tenant-free. It may name this repository and its owner and nothing else — no tenant,
+no machine, no account. §6 is the check that holds this.
 
 ## 2. The tenant is the unit
 
-A tenant is whoever the work belongs to: an employer, a client, an estate. Each has one context
-repository, and that repository carries four things, all of which `bin/adapt` installs:
+A tenant is whoever the work belongs to. Each has one context repository, and that repository
+carries four things, all of which `bin/adapt` installs:
 
 | Path | What it is | Who owns it |
 |---|---|---|
@@ -113,6 +113,7 @@ The complete set. All are optional and all are read at run time.
 | `PROTOCOL_DIR` | `$HOME/.pablo-protocol` | the well-known protocol path |
 | `PROTOCOL_MAX_FILE_MB` | `25` | the size ceiling `size-guard.sh` enforces |
 | `PROTOCOL_COMMAND_GUARDS` | unset | the command-guard directory one adapter's hooks run |
+| `PROTOCOL_PROTECTED_BRANCH` | `main` | the branch those guards refuse a push or a pick onto |
 
 ## 7. The adapter contract
 
@@ -129,7 +130,7 @@ An adapter is a directory under `adapters/` holding `detect.sh`, `adapt.sh` and 
   it exactly as written, because a broader pattern appended underneath wins as the last match and
   would silently undo an exception the tenant carved out.
 - **An adapter carries rules, never a list of repositories.** The moment it needs to know which
-  clone is which, it has stopped being protocol and started being somebody's estate.
+  clone is which, it has stopped being protocol and started being one tenant's context.
 
 The guarantee a consumer may rely on: **deleting every adapter leaves the protocol intact.**
 `bin/adapt` runs on a machine with none and says so.
@@ -169,5 +170,5 @@ them individually is the kind of thing that passes its own unit test and is wire
   person's configuration is a tool they stop running.
 - **Windows.** The scripts are bash and use symlinks, `git`, and POSIX tools. They are not tested
   anywhere else.
-- **Anything that identifies a tenant.** No repository names, no client names, no machine names,
+- **Anything that identifies a tenant.** No tenant names, no repository names, no machine names,
   no accounts, no addresses. This repository's own `.protocol/tenant` enforces it against itself.

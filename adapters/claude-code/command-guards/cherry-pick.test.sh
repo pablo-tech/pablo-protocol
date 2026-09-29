@@ -7,7 +7,7 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "$DIR/../../../bin/check.sh"
 
-guard() { bash "$DIR/cherry-pick.sh" "$1" "${2:-}"; }
+guard() { bash "$DIR/cherry-pick.sh" "$1" "${2:-}" "${PROTECTED:-}"; }
 verdict() { case "$(guard "$1" "${2:-}")" in deny\ *) echo deny ;; ask\ *) echo ask ;; *) echo silent ;; esac; }
 # Not `guard | grep`: the guard writes its reason and exits, so a grep that stops at the first line
 # leaves it writing into a closed pipe, and under pipefail that SIGPIPE read as a failed check.
@@ -42,5 +42,14 @@ EOF' main)\" = silent ]"
 check "an unresolved branch is not a prompt" "[ \"\$(verdict 'git cherry-pick abc123' '')\" = silent ]"
 check "nor is a detached HEAD" "[ \"\$(verdict 'git cherry-pick abc123' HEAD)\" = silent ]"
 check "this guard asks nothing at all" "[ \"\$(verdict 'git cherry-pick abc123' '')\" != ask ]"
+
+# The branch a pick must not land on is a role, not the name `main` — the dispatcher names it as $3.
+PROTECTED=release
+check "the protected branch is whichever one the dispatcher names" \
+  "[ \"\$(verdict 'git cherry-pick abc123' release)\" = deny ]"
+check "and the denial names it" "says 'git cherry-pick abc123' release 'onto release'"
+check "while main is then an ordinary branch" \
+  "[ \"\$(verdict 'git cherry-pick abc123' main)\" = silent ]"
+PROTECTED=
 
 finish
