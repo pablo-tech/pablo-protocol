@@ -16,10 +16,9 @@ else
   say write .agents/cortex/cortex/settings.json
 fi
 
-# Runtime state, not configuration: logs, caches and session tokens are written in here.
-for line in '/.agents/*/cortex/logs/' '/.agents/*/connections.toml'; do
-  ignore "$line"
-done
+# Runtime state, not configuration: logs, caches and session tokens are written in here, and
+# connections.toml is the one that names an account and points at a key file.
+ignore '/.agents/*/cortex/logs/' '/.agents/*/connections.toml'
 
 if [ -e "$HOME_DIR/run" ]; then
   say skip .agents/cortex/run

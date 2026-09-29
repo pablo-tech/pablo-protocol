@@ -71,7 +71,58 @@ git -C "$t/tenant" reset -q
 
 # shellcheck disable=SC2034 # read inside the check expression below, which shellcheck does not follow
 again="$(adapt --agent claude-code)"
-check "a second run changes nothing" "! grep -qE '^  (link|copy|seed|write|ignore|config) ' <<<\"\$again\""
+check "a second run changes nothing" \
+  "! grep -qE '^  (link|copy|seed|write|ignore|config|pin|strip) ' <<<\"\$again\""
+
+# The pin. `protocol/` is a symlink, so the checkout behind it can be moved on with nothing in the
+# tenant changing; the version written down is the only signal that happened, and bin/doctor reads
+# it back. What is asserted here is that the installer writes what it actually installed.
+fresh
+# shellcheck disable=SC2034 # read inside the check expressions below, which shellcheck does not follow
+tag="$(git -C "$PROTOCOL" describe --tags --exact-match 2>/dev/null)"
+adapt >/dev/null
+check "the tenant gets the pin file, seeded from the template" \
+  "[ -f '$t/tenant/.protocol/protocol-version' ]"
+check "and the install records the tag it installed, or says there was none" \
+  "if [ -n \"\$tag\" ]; then
+     [ \"\$(sed -e 's/#.*//' -e '/^[[:space:]]*\$/d' '$t/tenant/.protocol/protocol-version')\" = \"\$tag\" ]
+   else grep -q '^# unpinned' '$t/tenant/.protocol/protocol-version'; fi"
+# Moving a pin is a deliberate act: reading what changed, checking the protocol out, editing the
+# file. An installer that rewrote it would make that act a side effect of running the installer.
+printf '%s\n' 'v0.0.1' >"$t/tenant/.protocol/protocol-version"
+adapt >/dev/null
+check "a pin the tenant already wrote is never rewritten" \
+  "[ \"\$(cat '$t/tenant/.protocol/protocol-version')\" = v0.0.1 ]"
+
+# `.git` is a file, not a directory, in a worktree. Testing for a directory left the shim installed
+# and nothing pointed at it — the one failure mode where every file is present and no guard runs.
+fresh
+git -C "$t/tenant" commit -q --allow-empty -m x
+git -C "$t/tenant" worktree add -q -b w "$t/wt" >/dev/null 2>&1
+HOME="$t/home" bash "$DIR/adapt" --into "$t/wt" >/dev/null 2>&1
+check "a tenant whose .git is a file is still pointed at its hooks" \
+  "[ -f '$t/wt/.git' ] && [ \"\$(git -C '$t/wt' config --get core.hooksPath)\" = .githooks ]"
+
+# The second agent, and the reason the ignore rules arrive as a set: its two runtime paths share a
+# first segment, and the second of them is the file holding an account name and a key path.
+fresh
+adapt --agent cortex >/dev/null
+check "the tenant gets a configuration directory of its own for the second agent" \
+  "[ -f '$t/tenant/.agents/cortex/cortex/settings.json' ]"
+check "and a launcher that points the agent at it, executable" \
+  "[ -x '$t/tenant/.agents/cortex/run' ]"
+check "its logs are ignored" "grep -qx '/.agents/\*/cortex/logs/' '$t/tenant/.gitignore'"
+check "and so is the connection file beside them, which names an account and a key path" \
+  "grep -qx '/.agents/\*/connections.toml' '$t/tenant/.gitignore'"
+# shellcheck disable=SC2034 # as above
+twice="$(adapt --agent cortex)"
+check "a second run of that adapter changes nothing either" \
+  "! grep -qE '^  (link|copy|seed|write|ignore|config|pin|strip) ' <<<\"\$twice\""
+printf 'account = "x"\n' >"$t/tenant/.agents/cortex/connections.toml"
+git -C "$t/tenant" add -A 2>/dev/null
+check "so a git add -A cannot stage it" \
+  "[ -z \"\$(git -C '$t/tenant' diff --cached --name-only | grep connections.toml)\" ]"
+git -C "$t/tenant" reset -q
 
 # A tenant that already refuses a path in a spelling of its own has answered the question, and an
 # ignore rule appended underneath wins as the last matching pattern — so a broader one silently

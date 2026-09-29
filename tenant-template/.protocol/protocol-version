@@ -1,0 +1,11 @@
+# The tag of the protocol this tenant consumes. One line, the first that is neither blank nor a
+# whole-line comment; everything else here is for the reader.
+#
+# `protocol/` is a symlink, so the checkout behind it can be moved on by whoever develops the
+# protocol and no file in this repository would change — drift with no signal. This is the signal:
+# the version written down, which `protocol/bin/doctor` compares with what the checkout actually is.
+#
+# `bin/adapt` writes this line on install and never rewrites it afterwards. Moving a pin means
+# reading what changed (the protocol's CHANGELOG.md), checking the protocol out at the new tag, and
+# editing this file — three deliberate acts, in that order, rather than a side effect of re-running
+# the installer.
