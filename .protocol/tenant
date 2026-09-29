@@ -1,0 +1,27 @@
+# Terms belonging to the tenants this repository is NOT. One extended regular expression per line;
+# matched case-insensitively against every staged path and every staged byte. Whole-line comments
+# and blank lines are ignored. See guards/tenant-guard.sh.
+#
+# This repository is the tenant-free layer, and it is public, which is what makes this file the one
+# policy that cannot be written the obvious way: a list of the names a repository refuses is, read
+# backwards, a list of what it is protecting. So the names are not here. This tracked half carries
+# the *shapes* an identifier takes and the *words* that name a tenancy at all, both of which are
+# safe to publish; the proper nouns live in an untracked `.protocol/tenant.local` beside it, which
+# the guard appends without being able to tell the two apart (ARCHITECTURE.md §3).
+
+# Identifier shapes that are always somebody's infrastructure
+[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
+(^|[^0-9.])(10|192\.168)\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}
+(^|[^0-9])[0-9]{12}([^0-9]|$)
+
+# The words a tenancy is described with. Doctrine states rules as properties of the design, so a
+# document that reaches for one of these has started arguing from whoever it was extracted from —
+# which is the failure this repository exists to not have. A word used only to forbid itself reads
+# the same to a guard as one used in earnest, so the prohibitions elsewhere say "a tenant, a machine
+# or an account" and this line is why.
+employer
+employment
+\bestate\b
+corporate
+consulting
+day.?job
