@@ -36,6 +36,16 @@ announced here first.
 
 ### Changed
 
+- **`.protocol/tenant` no longer lists proper nouns.** The tracked half now carries only identifier
+  shapes and the handful of words a tenancy is described with; the names moved to the untracked
+  overlay this release added. A denylist in a public repository cannot name what it denies — read
+  backwards, the list is what the repository is protecting, which is the disclosure the file was
+  written to prevent. `ARCHITECTURE.md` §10, `CONTRIBUTING.md` and the CI step said this repository
+  enforced the rule against itself; the file is exempt from the scan it configures, so that was a
+  guarantee none of the three could make. All three now describe the split that does make it.
+- The rule now reaches the argument, not only the names. A document that explains a rule by who
+  someone works for is refused on the same commit hook as one naming a repository, so the papyrus
+  rule is a gate rather than a review note.
 - The documents no longer argue from the situation that produced them. `README.md`, `doctrine/`
   and the guard comments stated rules as things that had happened to a particular reader; they now
   state them as properties of the design. No mechanism changed and every rule keeps its force.

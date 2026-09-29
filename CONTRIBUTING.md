@@ -57,9 +57,16 @@ linked from everywhere else. A pull request that restates something `ARCHITECTUR
 will be asked to link instead — two copies drift and one becomes a lie with no signal which.
 
 **Nothing here may name a tenant.** No tenant, machine, account, address or repository
-other than this one. This repository's own `.protocol/tenant` enforces it against itself, and CI
-runs `guards/tenant-guard.sh --scan-tree` over the whole tree. If the check refuses something
-legitimate, the denylist is the bug — narrow it in the same pull request and say why.
+other than this one. `.protocol/tenant` states that as identifier shapes and as the words a tenancy
+is described with; your commit is checked against it, and CI runs `guards/tenant-guard.sh
+--scan-tree` over the whole tree. If the check refuses something legitimate, the denylist is the
+bug — narrow it in the same pull request and say why.
+
+The rule reaches the argument, not only the names. The denylist also carries the handful of words
+a tenancy gets described with, so a document explaining a rule by who someone works for is refused
+exactly as one naming a repository is. You will find you cannot write those words here even to warn
+about them — that is the point, and it is why this paragraph does not name them. State the rule as
+a property of the design instead.
 
 ## Adding an adapter for another AI coding agent
 

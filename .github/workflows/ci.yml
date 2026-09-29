@@ -38,8 +38,10 @@ jobs:
           shellcheck -x "${scripts[@]}"
 
       # The repository's own tenancy rule, applied to itself: nothing here may name a tenant, a
-      # machine or an account. --scan-tree reads the terms from .protocol/tenant rather than from a
-      # document that then drifts, which is what makes this a check instead of a review note.
+      # machine or an account, and no document may argue from one. --scan-tree reads the terms from
+      # .protocol/tenant rather than from a document that then drifts, which is what makes this a
+      # check instead of a review note. The tracked half carries only shapes and words — the proper
+      # nouns are in the untracked overlay, so this step runs without them (ARCHITECTURE.md §3).
       - name: No tenant material in the tree
         run: guards/tenant-guard.sh --scan-tree
 
