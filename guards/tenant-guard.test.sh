@@ -62,4 +62,18 @@ git -C "$t/repo" commit -qm x --no-verify
 printf 'Initech\n' >"$t/repo/notes.md"
 check "--scan-tree reads the working tree, not the staged set" "! scan"
 
+# The denylist has an untracked second layer, `.protocol/tenant.local`, for the terms a repository
+# cannot afford to publish in the file itself. The guard does not know it is there — `policy tenant`
+# hands back both layers as one list — and that is the point: the names bind commits without being
+# committed.
+tenant '# nothing tracked here names anybody'
+printf '/.protocol/*.local\n' >"$t/repo/.gitignore"
+printf 'Initech\n' >"$t/repo/.protocol/tenant.local"
+stage notes.md "met with Initech about the migration"
+check "a term carried only by the untracked overlay is still refused" "! guard"
+
+stage notes.md "the deploy is green"
+check "and the overlay itself is never staged, so nothing scans it" \
+  "guard && [ -z \"\$(git -C '$t/repo' diff --cached --name-only | grep 'tenant\\.local')\" ]"
+
 finish
