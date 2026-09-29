@@ -46,9 +46,9 @@ credentials live, how its machines are set up — goes in the tenant's own `AGEN
 
 ## Installing it
 
-[`README.md`](README.md#a-new-tenant-end-to-end) walks it end to end, from an empty directory to a
-commit the guards refuse. The short of it is `bin/adapt`, run from inside the tenant, and
-`bin/adapt --list` to see which agents this machine has.
+[`README.md`](README.md#a-rule-from-written-to-enforced) follows one doctrine rule end to end, from
+the sentence that states it to the commit the guards refuse. The short of it is `bin/adapt`, run
+from inside the tenant, and `bin/adapt --list` to see which agents this machine has.
 
 What a consumer may rely on, and what counts as a breaking change to it, is
 [`ARCHITECTURE.md`](ARCHITECTURE.md).

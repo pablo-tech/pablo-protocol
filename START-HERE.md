@@ -36,10 +36,10 @@ which is the list of things a change here is not allowed to break.
 
 ## B · Ten minutes, running it
 
-The [worked example](README.md#a-new-tenant-end-to-end) in the README is this track, in six
-numbered steps, ending in a commit that is refused. Run it against a scratch directory rather than
-a real repository — `bin/adapt` writes only inside the tenant you point it at and one symlink in
-your home directory, but a first run is a first run.
+The [worked example](README.md#a-rule-from-written-to-enforced) in the README is this track, in six
+numbered steps: one doctrine rule from the sentence that states it to the commit it refuses. Run it
+against a scratch directory rather than a real repository — `bin/adapt` writes only inside the
+tenant you point it at and one symlink in your home directory, but a first run is a first run.
 
 Two things worth knowing before you start, both of which the example assumes:
 
