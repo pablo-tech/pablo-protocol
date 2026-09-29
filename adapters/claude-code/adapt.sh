@@ -23,6 +23,9 @@ done
 mkdir -p "$TENANT/skills"
 for src in "$PROTOCOL"/doctrine/*.md; do
   name="$(basename "$src" .md)"
+  # The directory's own index is written for a person, not for a skill loader: it carries none of
+  # the frontmatter a SKILL.md needs, so wiring it would install a skill that cannot be read.
+  if [ "$name" = README ]; then continue; fi
   dst="$TENANT/skills/$name/SKILL.md"
   if [ -e "$dst" ] || [ -L "$dst" ]; then say skip "skills/$name"; continue; fi
   mkdir -p "$(dirname "$dst")"

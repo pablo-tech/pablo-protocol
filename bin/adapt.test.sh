@@ -28,8 +28,14 @@ check "the pre-commit shim is installed and executable" "[ -x '$t/tenant/.githoo
 check "git is pointed at it, which a clone does not carry" "[ \"\$(git -C '$t/tenant' config --get core.hooksPath)\" = .githooks ]"
 check "the well-known path resolves to this checkout" "[ \"\$(readlink -f '$t/home/.pablo-protocol')\" = '$PROTOCOL' ]"
 
+# The directory's own index is written for a person and carries none of the frontmatter a SKILL.md
+# needs, so a skill wired from it would install once and be unreadable to the loader ever after.
+wired=0
+for f in "$PROTOCOL"/doctrine/*.md; do [ "${f##*/}" = README.md ] || wired=$((wired+1)); done
 check "every doctrine file is offered as a skill" \
-  "[ \"\$(ls '$t/tenant/skills' | wc -l)\" = \"\$(ls '$PROTOCOL/doctrine' | wc -l)\" ]"
+  "[ \"\$(ls '$t/tenant/skills' | wc -l)\" = $wired ]"
+check "but the index beside them is not, not being a doctrine document" \
+  "[ ! -e '$t/tenant/skills/README' ] && [ ! -L '$t/tenant/skills/README' ]"
 check "a skill is a symlink to the doctrine file, not a second copy" "[ -L '$t/tenant/skills/warp/SKILL.md' ]"
 check "that symlink resolves through the tenant's own protocol entry" \
   "[ \"\$(readlink -f '$t/tenant/skills/warp/SKILL.md')\" = '$PROTOCOL/doctrine/warp.md' ]"
