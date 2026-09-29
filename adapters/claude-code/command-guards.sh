@@ -14,6 +14,12 @@ set -uo pipefail
 # this at a directory of stubs to exercise what happens when a guard is missing or answers nonsense.
 DIR="${PROTOCOL_COMMAND_GUARDS:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/command-guards}"
 GUARDS="dangerous-flags.sh push.sh cherry-pick.sh"
+# The branch that takes merges rather than commits, passed to every guard as $3. `main` is the
+# usual name for it and the default; a tenant whose deploy branch is called something else sets
+# this rather than editing a guard, because the rule is the branch's role, not its name.
+PROTECTED="${PROTOCOL_PROTECTED_BRANCH:-main}"
+# A checkout sitting on it is what the branch resolution below has to notice.
+on_protected() { [ "$(git -C "$1" symbolic-ref --short HEAD 2>/dev/null)" = "$PROTECTED" ]; }
 
 # Only consulted when the payload cannot be parsed at all, where a substring test over the raw bytes
 # can over-match but never under-match — so nothing guarded escapes and an unrelated command is
@@ -68,9 +74,10 @@ esac
 branch="$(git -C "$repo" symbolic-ref --short HEAD 2>/dev/null)"
 
 # The line itself can move before the command that acts on it runs: `git checkout main && git push`
-# pushed main while this read the session's own branch, and so did a `cd` into a checkout sitting on it.
-# A line may only make the branch main, never make it something else — reading a checkout as licence to
-# stop judging a push is the wrong direction for a parse to be wrong in.
+# pushed the protected branch while this read the session's own, and so did a `cd` into a checkout
+# sitting on it. A line may only make the branch the protected one, never make it something else —
+# reading a checkout as licence to stop judging a push is the wrong direction for a parse to be
+# wrong in.
 # Only the two git guards take the branch, so a line without git pays nothing for this.
 case "$cmd" in
   *git*)
@@ -81,7 +88,7 @@ case "$cmd" in
         "checkout "*|"switch "*)
           case " $clause " in
             *" -- "*) ;;
-            *" main "*) branch=main ;;
+            *" $PROTECTED "*) branch=$PROTECTED ;;
           esac ;;
       esac
     done < <(git_clauses "$cmd")
@@ -90,14 +97,13 @@ case "$cmd" in
         dir="$(printf ' %s' "$cmd" | tr '\n' ' ' |
           sed -nE 's#.*[^-A-Za-z0-9_/](pushd|cd)[[:space:]]+([^[:space:];&|]+).*#\2#p')"
         case "$dir" in "~"*) dir="$HOME${dir#\~}" ;; esac
-        [ -n "$dir" ] && [ "$(git -C "$dir" symbolic-ref --short HEAD 2>/dev/null)" = main ] &&
-          branch=main ;;
+        [ -n "$dir" ] && on_protected "$dir" && branch=$PROTECTED ;;
     esac
     # A line naming two repositories was read from the last -C alone, which is the wrong one half the
-    # time: any of them sitting on main is what this has to notice.
+    # time: any of them sitting on the protected branch is what this has to notice.
     set -f
     for dir in $dirs; do
-      [ "$(git -C "$dir" symbolic-ref --short HEAD 2>/dev/null)" = main ] && branch=main
+      on_protected "$dir" && branch=$PROTECTED
     done
     set +f ;;
 esac
@@ -105,7 +111,7 @@ esac
 for g in $GUARDS; do
   # Fail closed, exactly as guards.sh does: a silently skipped guard is worse than a missing one,
   # because the thing it was meant to catch goes through and the absence never announces itself.
-  if [ ! -x "$DIR/$g" ] || ! verdict="$("$DIR/$g" "$cmd" "$branch")"; then
+  if [ ! -x "$DIR/$g" ] || ! verdict="$("$DIR/$g" "$cmd" "$branch" "$PROTECTED")"; then
     decide deny "a guard this hook dispatches is missing, not executable, or failed while deciding. Every command stays denied until that is fixed rather than going through unchecked."
   fi
   case "$verdict" in

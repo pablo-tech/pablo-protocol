@@ -39,8 +39,8 @@ appended underneath would win as the last matching pattern and untrack the memor
 **An adapter carries rules, never a list of repositories.** Where an agent offers a hook, the rule it
 enforces has to be one an unrelated reader would recognise — a flag that defeats a check, a branch
 that takes merges rather than commits. The moment it needs to know which clone is which or which
-merge publishes a package, it has stopped being protocol and started being somebody's estate, and it
-belongs in the tenant's own hook beside this one.
+merge publishes a package, it has stopped being protocol and started being one tenant's context,
+and it belongs in the tenant's own hook beside this one.
 
 ## Adding one
 
