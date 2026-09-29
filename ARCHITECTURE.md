@@ -171,4 +171,9 @@ them individually is the kind of thing that passes its own unit test and is wire
 - **Windows.** The scripts are bash and use symlinks, `git`, and POSIX tools. They are not tested
   anywhere else.
 - **Anything that identifies a tenant.** No tenant names, no repository names, no machine names,
-  no accounts, no addresses. This repository's own `.protocol/tenant` enforces it against itself.
+  no accounts, no addresses. `guards/tenant-guard.sh --scan-tree` enforces it against this tree on
+  every commit and in CI, over identifier shapes and over the words a tenancy is described with.
+  The proper nouns it would otherwise have to list are in the untracked overlay (§3), because a
+  denylist in a public repository cannot name what it denies — the list would be the disclosure.
+  `.protocol/tenant` is exempt from the scan it configures, which is why keeping the names out of
+  the tracked half is structural rather than a habit.
