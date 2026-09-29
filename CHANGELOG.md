@@ -14,6 +14,8 @@ announced here first.
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-09-29
+
 ### Added
 
 - **`.protocol/protocol-version` is part of the tenant contract** (`ARCHITECTURE.md` §11). The
@@ -168,7 +170,8 @@ announced here first.
 - The agent's own runtime state — session transcripts above all — is refused by the Claude adapter's
   ignore rules before the first session can write any.
 
-[Unreleased]: https://github.com/pablo-tech/pablo-protocol/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/pablo-tech/pablo-protocol/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/pablo-tech/pablo-protocol/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/pablo-tech/pablo-protocol/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/pablo-tech/pablo-protocol/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/pablo-tech/pablo-protocol/compare/v0.1.1...v0.2.0
