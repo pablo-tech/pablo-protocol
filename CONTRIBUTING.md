@@ -56,7 +56,7 @@ A pull request that "fixes" one of these needs to argue with the reason, not jus
 linked from everywhere else. A pull request that restates something `ARCHITECTURE.md` already says
 will be asked to link instead — two copies drift and one becomes a lie with no signal which.
 
-**Nothing here may name a tenant.** No client, employer, machine, account, address or repository
+**Nothing here may name a tenant.** No tenant, machine, account, address or repository
 other than this one. This repository's own `.protocol/tenant` enforces it against itself, and CI
 runs `guards/tenant-guard.sh --scan-tree` over the whole tree. If the check refuses something
 legitimate, the denylist is the bug — narrow it in the same pull request and say why.

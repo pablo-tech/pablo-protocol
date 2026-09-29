@@ -6,7 +6,7 @@
 
 - [ ] `bin/test.sh` passes, and new or changed behaviour arrives with the test that pins it.
 - [ ] Every commit is signed off (`git commit -s`) — see [CONTRIBUTING.md](../CONTRIBUTING.md).
-- [ ] Nothing added names a tenant: no client, employer, machine, account, address or repository
+- [ ] Nothing added names a tenant: no tenant, machine, account, address or repository
       other than this one. `guards/tenant-guard.sh --scan-tree` is clean.
 - [ ] No fact is stated in two places. Where something here is already explained in
       [ARCHITECTURE.md](../ARCHITECTURE.md), this links to it rather than restating it.

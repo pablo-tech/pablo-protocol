@@ -14,7 +14,7 @@ enforce them.** Read the one that applies to what you are about to do.
 | [`doctrine/clean-code.md`](doctrine/clean-code.md) | writing code — or prose, which is held to the same standard |
 | [`doctrine/testing.md`](doctrine/testing.md) | writing or changing a test, which is any change of behaviour |
 | [`doctrine/as-built.md`](doctrine/as-built.md) | changing how a system works, or finding a document that disagrees with one |
-| [`doctrine/tenancy.md`](doctrine/tenancy.md) | working for more than one employer or client from one machine |
+| [`doctrine/tenancy.md`](doctrine/tenancy.md) | working for more than one tenant from one machine |
 | [`doctrine/llm-output-trust.md`](doctrine/llm-output-trust.md) | changing the model, prompt or thinking mode of a call a human will act on |
 
 ## The two rules that hold the rest together
