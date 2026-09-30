@@ -16,6 +16,12 @@ move with `main` can stop at.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`bin/adapt` and its suite under macOS's bash 3.2.** The well-known path was printed as
+  `'~'/.pablo-protocol`, the quotes of `${var/pat/'~'}` kept literally, and the suite's skill count
+  compared BSD `wc`'s space-padded output as a string. CI runs on Linux only, so neither showed there.
+
 ## [0.6.0] — 2026-09-30
 
 ### Changed

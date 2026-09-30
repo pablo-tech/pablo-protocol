@@ -38,7 +38,7 @@ check "and is reported under ~, not as somebody's absolute home" \
 wired=0
 for f in "$PROTOCOL"/doctrine/*.md; do [ "${f##*/}" = README.md ] || wired=$((wired+1)); done
 check "every doctrine file is offered as a skill" \
-  "[ \"\$(ls '$t/tenant/skills' | wc -l)\" = $wired ]"
+  "[ \$(ls '$t/tenant/skills' | wc -l) -eq $wired ]"   # compared as a number: BSD wc pads its count
 check "but the index beside them is not, not being a doctrine document" \
   "[ ! -e '$t/tenant/skills/README' ] && [ ! -L '$t/tenant/skills/README' ]"
 check "a skill is a symlink to the doctrine file, not a second copy" "[ -L '$t/tenant/skills/warp/SKILL.md' ]"
