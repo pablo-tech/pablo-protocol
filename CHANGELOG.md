@@ -31,7 +31,8 @@ move with `main` can stop at.
   `ubuntu-latest`, and a protocol that installs itself on whatever machine a tenant has was being
   tested on one kind of machine. A separate job rather than a matrix, so the one required check
   keeps its name; only the suites run there, since shellcheck, the tenancy scan and the sign-off
-  check are questions about the tree rather than about the shell. A tag now needs it green before it cuts a release.
+  check are questions about the tree rather than about the shell. A tag now needs it green before
+  it cuts a release.
 
 ### Fixed
 
