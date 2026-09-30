@@ -18,6 +18,9 @@ past them without a person deciding to let it:
 - A way to stage another tenant's material without `tenant-guard.sh` failing — a path or content
   form that evades a denylist term which plainly describes it, or content the guard never reads
   because of how the file is encoded, renamed or staged.
+- A way to make a commit as an identity `.protocol/identity` does not list without
+  `identity-guard.sh` failing, or a way for `--scan-history` to walk a range and miss a header in
+  it.
 - A way to stage credential material without `credentials-guard.sh` failing, or a way to widen
   `.protocol/credentials-allow-name` or `-allow-content` beyond the paths a tenant listed.
 - A way to make `guards.sh` report success having run nothing — a missing, unreadable or

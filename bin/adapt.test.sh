@@ -24,6 +24,11 @@ check "the protocol is reachable from the tenant root" "[ -d '$t/tenant/protocol
 check "the protocol entry is gitignored, being a machine-local path" "grep -qx '/protocol' '$t/tenant/.gitignore'"
 check "the tenant gets an AGENTS.md to fill in" "[ -f '$t/tenant/AGENTS.md' ]"
 check "the tenant gets a denylist to fill in" "[ -f '$t/tenant/.protocol/tenant' ]"
+# Empty as it is seeded, so it polices nothing until somebody fills it in. A tenant that never
+# does is exactly where it was before the file existed, which is what makes seeding it safe.
+check "and an identity allowlist, which claims nobody until it is filled in" \
+  "[ -f '$t/tenant/.protocol/identity' ] &&
+   [ -z \"\$(sed -e '/^[[:space:]]*#/d' -e '/^[[:space:]]*$/d' '$t/tenant/.protocol/identity')\" ]"
 check "the pre-commit shim is installed and executable" "[ -x '$t/tenant/.githooks/pre-commit' ]"
 check "git is pointed at it, which a clone does not carry" "[ \"\$(git -C '$t/tenant' config --get core.hooksPath)\" = .githooks ]"
 check "the well-known path resolves to this checkout" "[ \"\$(readlink -f '$t/home/.pablo-protocol')\" = '$PROTOCOL' ]"

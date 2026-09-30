@@ -57,6 +57,11 @@ check "and is told which branch it tracks, and that it is current" \
 check "the hook is reported as pointed at" "grep -q 'ok    core.hooksPath' <<<\"\$out\""
 check "a seeded denylist that is all comments is reported as policing nothing" \
   "grep -q 'tenancy declares 0 terms' <<<\"\$out\""
+# The one question whose answer is printed rather than counted: it is this machine's git
+# configuration, and a tenant told only that something is wrong with it cannot act on that.
+check "the identity a commit here would be made as is reported" \
+  "grep -q 'commits here are made as Test <t@example.invalid>' <<<\"\$out\""
+
 
 # Behind is not broken — nothing is wrong until you commit against doctrine you have not read — so it
 # is a note, and it says by how many rather than that something failed.
@@ -185,6 +190,16 @@ printf 'Umbrella\n' >"$t/tenant/.protocol/tenant.local"
 counted="$(doctor)"
 check "both layers of the policy are counted" "grep -q 'tenancy declared: 2 term(s)' <<<\"\$counted\""
 check "and no term is ever printed" "! grep -qiE 'Initech|Umbrella' <<<\"\$counted\""
+
+# An identity is machine configuration and a clone carries none of its own, so the fixture's own
+# is exactly the case: whoever this machine was set up as, against a repository that has said who
+# its commits are made as.
+fresh; repoint; at main
+printf 'someone@example\\.test\n' >"$t/tenant/.protocol/identity"
+check "an identity the tenant does not claim is a problem, not a note" \
+  "refuses 'which .protocol/identity does not claim'"
+git -C "$t/tenant" config user.email someone@example.test
+check "and the one it claims is reported as ok" "says 'ok    commits here are made as'"
 
 # shellcheck disable=SC2034 # as above
 helped="$(bash "$DIR/doctor" --help)"

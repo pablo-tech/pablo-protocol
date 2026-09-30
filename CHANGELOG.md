@@ -18,6 +18,26 @@ move with `main` can stop at.
 
 ### Added
 
+- **A guard for the identity a commit is made as** — `guards/identity-guard.sh`, fourth in the
+  chain, reading `.protocol/identity`: the identities a repository's commits may be made as, one
+  extended regular expression per line, matched against `Name <email>` for the author and for the
+  committer. Which identity git uses is machine configuration and a clone carries none of its own,
+  so a commit is made as whoever the machine was set up as and git says nothing about the
+  difference — on a machine serving more than one tenant there is one default and several right
+  answers, and the header that records the wrong one outlives the mistake. The declaration is an
+  allowlist where the tenancy one is a denylist, for the reason that one is not: the identities a
+  repository's commits are legitimately made as can be enumerated in advance, and the terms its
+  work will legitimately contain cannot. `--scan-history [<range>]` applies the same list to the
+  commits already on the branch, which is the only way a header written on a machine with no hook
+  configured is ever found. `doctrine/tenancy.md` carries the reasoning; a repository without the
+  file claims no identity and is not policed, so nothing changes for a tenant that says nothing.
+- **`bin/adapt` seeds `.protocol/identity`, and `bin/doctor` asks the fifth question.** The seed is
+  comments only, which polices nothing — the state a tenant was in before the file existed — and is
+  there so the mechanism is discoverable from the tenant rather than only from here. The doctor
+  reports which identity a commit made in that tenant would be made as, and whether the tenant
+  claims it. It is the one answer printed rather than counted: it is the machine's own git
+  configuration and not a line out of a policy file, and a report that withheld it could not be
+  acted on.
 - **A tenant reports a defect in the protocol as an issue in its own repository, not as a pull
   request here** (`doctrine/tenancy.md`). The guard a tenant relies on judges a commit in that
   tenant's repository, and a pull request opened here is none of those things — not the branch, not

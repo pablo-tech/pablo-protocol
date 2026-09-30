@@ -202,7 +202,7 @@ what the repository is protecting — [`ARCHITECTURE.md`](ARCHITECTURE.md) §3.
 |---|---|
 | [`doctrine/`](doctrine/) | the protocol itself, and nothing else is normative — [`doctrine/README.md`](doctrine/README.md) is what each document holds you to |
 | [`AGENTS.md`](AGENTS.md) | the entry point an agent reads: which document to open before which piece of work |
-| [`guards/`](guards/) | the commit-time enforcement: file size, credentials, tenancy |
+| [`guards/`](guards/) | the commit-time enforcement: file size, credentials, tenancy, and the identity a commit is made as |
 | [`bin/adapt`](bin/adapt) | the installer, idempotent, `--copy` for a machine that will not follow symlinks |
 | [`adapters/`](adapters/) | one small directory per AI coding agent, each holding `detect.sh` and `adapt.sh` |
 | [`tenant-template/`](tenant-template/) | the files a new tenant starts from, each one a seed to edit |

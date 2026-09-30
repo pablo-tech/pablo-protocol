@@ -1,0 +1,21 @@
+# The identities this repository's commits may be made as. One extended regular expression per
+# line; matched case-insensitively against `Name <email>`, for the author and for the committer of
+# the commit being made. Whole-line comments and blank lines are ignored. A commit made as an
+# identity no line matches is refused.
+#
+# Empty as it ships, which polices nothing — the same state this repository was in before the file
+# arrived. Fill it in on the day whose commits these are matters: which identity a commit is made
+# as is configured per machine, a fresh clone carries none of this repository's own, and git says
+# nothing when the answer it falls back to is somebody else's.
+#
+# See protocol/doctrine/tenancy.md. `protocol/guards/identity-guard.sh --scan-history` applies the
+# same list to the commits already on the branch.
+
+# Each identity this repository's commits are made as. An address alone is enough, and so is a
+# whole domain.
+# Example:  someone@example\.com
+#           @example\.com>$
+#
+# If this repository will itself be read by others, put them in an untracked
+# `.protocol/identity.local` beside this file instead: the guard appends it, and an address is a
+# person rather than a shape.

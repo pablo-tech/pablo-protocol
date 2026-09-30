@@ -30,3 +30,8 @@ at commit time.>
 
 The tenants this repository is **not** are declared in [`.protocol/tenant`](.protocol/tenant), and a
 commit naming one is refused. Add a tenant there when you take one on — not to this file.
+
+The identities this repository's commits may be made as are declared in
+[`.protocol/identity`](.protocol/identity), and a commit made as another is refused. A clone
+carries no identity of its own, so a machine's default is what a commit here would otherwise be
+made as.

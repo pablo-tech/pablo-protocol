@@ -37,25 +37,27 @@ including the ones that do not exist yet.
 
 ## What a tenant repository carries
 
-A tenant is whoever the work belongs to. Its context repository carries five things, all of which
+A tenant is whoever the work belongs to. Its context repository carries six things, all of which
 `bin/adapt` installs:
 
 ```
 protocol/            this repository (symlinked; gitignored — it is a machine-local path)
 AGENTS.md            the tenant's own file: its facts, and a pointer to protocol/AGENTS.md
 .protocol/tenant     the terms belonging to the tenants this repository is NOT
+.protocol/identity   the identities this repository's commits may be made as
 .protocol/protocol-version
                      which commit of this protocol installed the tenant, rewritten by every run
                      of bin/adapt — a receipt, never edited by hand
 .githooks/pre-commit the shim that runs protocol/guards/guards.sh
 ```
 
-`bin/doctor`, run from inside a tenant, checks those five against what is actually on disk — which
+`bin/doctor`, run from inside a tenant, checks those six against what is actually on disk — which
 protocol `protocol/` resolves to and how far behind its origin it is, every skill symlink against
-its target, `core.hooksPath` against a clone that does not carry it, and the denylist by term
-count. It also notes, without failing, an install left behind by a protocol that has moved on, and a
-launcher the installer wrote whole and has skipped ever since, still carrying what an older
-version of this protocol put there.
+its target, `core.hooksPath` against a clone that does not carry it, the denylist by term count,
+and which identity a commit made there would be made as, against what the tenant claims. It also
+notes, without failing, an install left behind by a protocol that has moved on, and a launcher the
+installer wrote whole and has skipped ever since, still carrying what an older version of this
+protocol put there.
 
 Anything an agent needs that is true of *this tenant only* — which repository owns what, where its
 credentials live, how its machines are set up — goes in the tenant's own `AGENTS.md`, never here.
