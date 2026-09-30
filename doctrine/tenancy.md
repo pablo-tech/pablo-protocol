@@ -1,6 +1,6 @@
 ---
 name: tenancy
-description: Working for more than one tenant from one set of tools — what a tenant is, why the commit is the only boundary that binds every agent, how .protocol/tenant declares the ones this repo is not, the four controls in order of what actually carries weight, and why a tenant reports a protocol defect on itself rather than upstream.
+description: Working for more than one tenant from one set of tools — what a tenant is, why the commit is the only boundary that binds every agent, how .protocol/tenant declares the ones this repo is not and .protocol/identity declares whose commits these are, the four controls in order of what actually carries weight, and why a tenant reports a protocol defect on itself rather than upstream.
 ---
 
 # Tenancy
@@ -42,6 +42,30 @@ A repository that will itself be read by others carries the terms in an untracke
 `.protocol/<name>.local` beside the tracked file, which the guard appends to it. A denylist read
 backwards is a list of what the repository is protecting, so a published one states the shapes and
 the categories and leaves the proper nouns on the machine that needs them.
+
+## Whose commits these are
+
+The declaration above refuses another tenant's *material*. The name and address a commit is made as
+is not material, and passes through it untouched: it is not a staged path and not a staged byte. It
+is also the one line of a commit that names a person rather than the work, and the one that cannot
+be corrected afterwards without rewriting every commit that followed it.
+
+Which identity git uses is machine configuration. A fresh clone carries none of its own, so a
+commit is made as whoever the machine was set up as, and git says nothing about the difference. On
+a machine serving more than one tenant there is one default and several right answers, so the
+default is wrong for all but one of them — silently, permanently, and in a header read much later
+by somebody who was not there.
+
+So a repository states it, the way it states the tenants it is not. `.protocol/identity` lists the
+identities its commits may be made as, one extended regular expression per line, and
+[`guards/identity-guard.sh`](../guards/identity-guard.sh) refuses a commit whose author or
+committer matches none of them. A repository without that file claims no identity and is not
+policed. `--scan-history` applies the same list to the commits already on the branch, which is the
+only way a header written on a machine with no hook configured is ever found.
+
+This one is an allowlist where the tenancy declaration is a denylist, for the reason that one is
+not: the identities a repository's commits are legitimately made as can be enumerated in advance —
+there are one or two — while the terms its work will legitimately contain cannot.
 
 ## The four controls, in order of what carries weight
 

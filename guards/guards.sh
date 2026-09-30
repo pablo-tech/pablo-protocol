@@ -13,7 +13,7 @@ set -uo pipefail
 # be made before this file can be read — deriving it here would only describe the tree already chosen.
 DIR="${PROTOCOL_GUARDS:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 
-for g in size-guard.sh credentials-guard.sh tenant-guard.sh; do
+for g in size-guard.sh credentials-guard.sh tenant-guard.sh identity-guard.sh; do
   if [ ! -x "$DIR/$g" ]; then
     # Fail closed. A silently skipped guard is worse than a missing one: the thing it was meant to
     # catch reaches history, and the absence never announces itself.

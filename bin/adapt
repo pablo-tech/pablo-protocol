@@ -12,8 +12,9 @@
 # What it installs, all of it skipped where it is already there:
 #   <tenant>/protocol          this repository, symlinked (gitignored — a machine-local path)
 #   <tenant>/AGENTS.md         the entry point every agent reads, if the tenant has none
-#   <tenant>/.protocol/tenant  the denylist naming the tenants this repository is not
-#                              (its untracked `.local` overlay is gitignored, never seeded)
+#   <tenant>/.protocol/tenant    the denylist naming the tenants this repository is not
+#   <tenant>/.protocol/identity  the identities its commits may be made as, empty until set
+#                                (their untracked `.local` overlays are gitignored, never seeded)
 #   <tenant>/.protocol/protocol-version
 #                              which commit of this protocol installed the tenant, rewritten each run
 #   <tenant>/.githooks/        the pre-commit shim, and core.hooksPath pointed at it
@@ -130,6 +131,7 @@ fi
 ignore "/protocol" "/.protocol/*.local"
 seed AGENTS.md
 seed .protocol/tenant
+seed .protocol/identity
 seed .protocol/protocol-version
 record
 seed .githooks/pre-commit

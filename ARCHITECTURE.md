@@ -64,6 +64,7 @@ The policy files in use:
 | File | Guard | Contents |
 |---|---|---|
 | `.protocol/tenant` | `tenant-guard.sh` | extended regular expressions; the terms belonging to the tenants this repository is **not** |
+| `.protocol/identity` | `identity-guard.sh` | extended regular expressions; the identities this repository's commits may be made as |
 | `.protocol/credentials-allow-name` | `credentials-guard.sh` | globs exempt from the *shape* rule — a file whose name looks like a credential and holds none |
 | `.protocol/credentials-allow-content` | `credentials-guard.sh` | globs that may *contain* credential-shaped text — the suites whose fixtures pin these rules |
 | `.protocol/<name>.local` | whichever guard reads `<name>` | the untracked overlay, appended to the tracked file of that name |
@@ -74,17 +75,25 @@ contain `#`.
 ## 4. The guard chain runs in order and fails closed
 
 `guards/guards.sh` is the single entry point. It runs `size-guard.sh`, then
-`credentials-guard.sh`, then `tenant-guard.sh`, and stops at the first non-zero exit. A guard that
-is missing or not executable **blocks the commit** rather than being skipped: a silently skipped
-guard lets the thing it was meant to catch reach history, and the absence never announces itself.
+`credentials-guard.sh`, then `tenant-guard.sh`, then `identity-guard.sh`, and stops at the first
+non-zero exit. A guard that is missing or not executable **blocks the commit** rather than being
+skipped: a silently skipped guard lets the thing it was meant to catch reach history, and the
+absence never announces itself.
 
-Each guard judges the staged blob, not the file on disk — `git show :<path>`, not `cat <path>` —
-because the index is what a commit would record. `size-guard.sh` and `credentials-guard.sh` also
-compare against staged size and staged bytes for the same reason.
+Each guard that reads the tree judges the staged blob, not the file on disk — `git show :<path>`,
+not `cat <path>` — because the index is what a commit would record. `size-guard.sh` and
+`credentials-guard.sh` also compare against staged size and staged bytes for the same reason.
 
 Two guards take `--scan-tree`, which applies their rules to every tracked file instead of the
-staged set. That is the audit mode: it reads the terms from the repository rather than from a
-document that then drifts.
+staged set, and `identity-guard.sh` takes `--scan-history`, which applies its list to the commits
+already on the branch. That is the audit mode: it reads the terms from the repository rather than
+from a document that then drifts — and for the history it is also the only mode there is, since a
+header a machine with no hook configured wrote is past the hook by the time anyone looks.
+
+`identity-guard.sh` is the one guard that does not read the staged set at all. Which identity a
+commit is made as is neither a staged path nor a staged byte: it is `git var GIT_AUTHOR_IDENT`,
+asked of git rather than derived, so the guard judges the identity the commit will actually carry
+rather than a second implementation of that lookup.
 
 The bypass is `git commit --no-verify`, deliberately and universally. A control with no bypass is
 a control that gets uninstalled.

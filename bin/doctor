@@ -4,12 +4,14 @@
 #   bin/doctor                  check the current directory
 #   bin/doctor --in <dir>       check that directory
 #
-# Four questions, each of which has a silent wrong answer:
+# Five questions, each of which has a silent wrong answer:
 #   the protocol   `protocol/` is a symlink, so the checkout behind it can move with no file here
 #                  changing — and a tenant that tracks a branch can also simply be behind it
 #   the links      a skill whose target has moved still lists, and fails only when something reads it
 #   the hook       core.hooksPath does not travel with a clone, so a fresh clone runs no guards
 #   the tenancy    a denylist that parses to zero terms polices nothing and says nothing about it
+#   the identity   which name and address a commit here would be made as, which is configured per
+#                  machine and does not travel with a clone
 #
 # And two that are notes rather than faults, because neither breaks anything today: a protocol that
 # has moved on since `bin/adapt` last ran here, and a file the installer writes whole and then skips
@@ -17,6 +19,8 @@
 #
 # Exit 1 if anything is wrong. Nothing here prints a policy file's contents: a denylist read
 # backwards is a list of what the repository is protecting, so the terms are counted, never named.
+# The identity below is the exception that proves it — it is this machine's own git configuration
+# rather than a line out of a policy file, and a report that withheld it could not be acted on.
 set -uo pipefail
 
 PROTOCOL="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -179,6 +183,31 @@ elif terms="$(cd "$TENANT" && . "$PROTOCOL/guards/policy.sh" && policy tenant)";
   else note "tenancy declares 0 terms" "the guard exits 0 — .protocol/tenant polices nothing yet"; fi
 else
   note "no .protocol/tenant" "this repository declares no tenancy and is not policed"
+fi
+
+# 5. The identity. Which name and address a commit here would be made as. That is machine
+# configuration, and a clone carries none of its own — so on a fresh clone the answer is whoever
+# the machine was set up as, arrived at silently, and written into a header that outlives the
+# mistake. Asked of git rather than derived, the way guards/identity-guard.sh asks it.
+if [ ! -e "$TENANT/.git" ]; then
+  note "identity not read" "there are no commits here to be made as anybody"
+elif ! ident="$(cd "$TENANT" && git var GIT_AUTHOR_IDENT 2>/dev/null)"; then
+  bad "git cannot say who a commit here would be made as" \
+      "git -C \"$TENANT\" config user.email \"<email>\""
+else
+  # `Name <email> 1790800093 -0700`; the trailing timestamp is the clock, not who this is.
+  ident="${ident% * *}"
+  if allowed="$(cd "$TENANT" && . "$PROTOCOL/guards/policy.sh" && policy identity)" &&
+     [ -n "$allowed" ]; then
+    if printf '%s' "$ident" | grep -qiE -- "$(printf '%s' "$allowed" | paste -sd'|' -)"; then
+      ok "commits here are made as $ident"
+    else
+      bad "commits here would be made as $ident, which .protocol/identity does not claim" \
+          "git -C \"$TENANT\" config user.email \"<email>\""
+    fi
+  else
+    note "commits here are made as $ident" "no identity declared — .protocol/identity claims none"
+  fi
 fi
 
 [ "$fail" -eq 0 ] || echo "doctor: $fail problem(s)"
