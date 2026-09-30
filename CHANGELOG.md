@@ -14,6 +14,19 @@ announced here first.
 
 ## [Unreleased]
 
+## [0.5.2] — 2026-09-30
+
+### Fixed
+
+- **`bin/doctor` no longer reports a fault against a tenant that wrote its own pre-commit shim.**
+  The check reads the guard resolution order out of the file, which it can do for a shim that came
+  from `tenant-template/` and cannot do for a dispatcher it has never seen — so it now asks the
+  question only of the former, recognised by the `PROTOCOL_GUARDS` every version of that template
+  has named. A tenant dispatching guards of its own alongside these was being told its hook never
+  consults its own `protocol/` while it did, and a check that is wrong about a correctly wired
+  repository is one people learn to scroll past. `ARCHITECTURE.md` §5 says so where the order is
+  written down.
+
 ## [0.5.1] — 2026-09-29
 
 ### Fixed
@@ -196,7 +209,8 @@ announced here first.
 - The agent's own runtime state — session transcripts above all — is refused by the Claude adapter's
   ignore rules before the first session can write any.
 
-[Unreleased]: https://github.com/pablo-tech/pablo-protocol/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/pablo-tech/pablo-protocol/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/pablo-tech/pablo-protocol/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/pablo-tech/pablo-protocol/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/pablo-tech/pablo-protocol/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/pablo-tech/pablo-protocol/compare/v0.3.0...v0.4.0

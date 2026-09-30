@@ -82,9 +82,16 @@ fi
 # from before this step existed reads its doctrine from one checkout and runs its guards from
 # another — the well-known path, which is one per machine and cannot serve two pins.
 #
+# Asked only of a shim that came from `tenant-template/`, which every version of it has named
+# `PROTOCOL_GUARDS` in. A tenant that wrote its own shim resolves the guards its own way — through a
+# dispatcher of its own, most likely, which this cannot read out of the file. Asserting anyway would
+# report a fault against a repository that is wired correctly, and a check that does that is one
+# people learn to scroll past.
+#
 # The remedy is not "re-run bin/adapt": the installer seeds this file and then never rewrites it,
 # which is what makes it the tenant's to edit. Copying over it is a decision, so it is stated as one.
 if [ -x "$P/guards/guards.sh" ] && [ -f "$TENANT/.githooks/pre-commit" ] &&
+   grep -q 'PROTOCOL_GUARDS' "$TENANT/.githooks/pre-commit" &&
    ! grep -q 'protocol/guards' "$TENANT/.githooks/pre-commit"; then
   bad ".githooks/pre-commit never consults this repository's own protocol/" \
       "cp protocol/tenant-template/.githooks/pre-commit .githooks/pre-commit (bin/adapt will not)"
