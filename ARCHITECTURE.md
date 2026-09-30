@@ -168,7 +168,9 @@ The guarantee a consumer may rely on: **deleting every adapter leaves the protoc
 ## 8. `bin/adapt` is idempotent and additive
 
 It skips anything already present, prints one line per change, and never removes or rewrites. A
-second run prints only `skip`. `--copy` substitutes copies for symlinks throughout, for a machine
+second run changes nothing, and says so twice over: `skip` for each file already there, and `keep`
+for the pin in `.protocol/protocol-version`, which is a separate question from whether that file
+exists and so gets its own word rather than a second `skip` on the same path. `--copy` substitutes copies for symlinks throughout, for a machine
 that will not follow a link or whose agent configuration directory is centrally managed; it
 dereferences on copy, because the machine that needs `--copy` is exactly the machine that cannot
 read a link.

@@ -14,6 +14,18 @@ announced here first.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`bin/adapt` reported the pin file as skipped twice in one run, and neither line said what the
+  pin was.** Seeding that file and keeping the version written in it are two answers to two
+  questions — the file is there, and the pin in it stands — but both printed `skip
+  .protocol/protocol-version`, so one path appeared twice under one word and read as the installer
+  repeating itself. The second answer is now `keep <version>`, which names the pin the run left
+  alone. Nothing about the pin itself changed: an existing value is still never rewritten.
+- **The well-known path was reported as an absolute home directory rather than `~/...`.** In
+  `${var/pat/repl}` an unquoted `~` in the replacement half is tilde-expanded back to `$HOME`, so
+  the one line written to shorten a home path printed it in full, on every run, for every tenant.
+
 ## [0.5.2] — 2026-09-30
 
 ### Fixed

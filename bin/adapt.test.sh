@@ -27,6 +27,11 @@ check "the tenant gets a denylist to fill in" "[ -f '$t/tenant/.protocol/tenant'
 check "the pre-commit shim is installed and executable" "[ -x '$t/tenant/.githooks/pre-commit' ]"
 check "git is pointed at it, which a clone does not carry" "[ \"\$(git -C '$t/tenant' config --get core.hooksPath)\" = .githooks ]"
 check "the well-known path resolves to this checkout" "[ \"\$(readlink -f '$t/home/.pablo-protocol')\" = '$PROTOCOL' ]"
+# And is reported as ~/..., which it was not: an unquoted ~ in the replacement half of
+# ${var/pat/repl} is tilde-expanded back to $HOME, so the one line written to shorten a home path
+# printed it in full, on every run, for every tenant.
+check "and is reported under ~, not as somebody's absolute home" \
+  "grep -qE '^  (link|skip) +~/\\.pablo-protocol$' <<<\"\$(adapt)\""
 
 # The directory's own index is written for a person and carries none of the frontmatter a SKILL.md
 # needs, so a skill wired from it would install once and be unreadable to the loader ever after.
@@ -93,6 +98,13 @@ printf '%s\n' 'v0.0.1' >"$t/tenant/.protocol/protocol-version"
 adapt >/dev/null
 check "a pin the tenant already wrote is never rewritten" \
   "[ \"\$(cat '$t/tenant/.protocol/protocol-version')\" = v0.0.1 ]"
+# And it says which pin it kept. `skip <path>` was printed here by the seed above and again by this
+# step, so one file appeared twice under one word — which reads as the installer repeating itself
+# rather than as two answers to two questions.
+check "the pin it kept is named, not reported as another skipped file" \
+  "grep -qE '^  keep +v0\\.0\\.1$' <<<\"\$(adapt)\""
+check "so no path is reported skipped twice in one run" \
+  "[ \"\$(adapt | awk '\$1 == \"skip\"' | sort | uniq -d)\" = '' ]"
 
 # `.git` is a file, not a directory, in a worktree. Testing for a directory left the shim installed
 # and nothing pointed at it — the one failure mode where every file is present and no guard runs.
