@@ -12,11 +12,32 @@ PROTOCOL="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 . "$PROTOCOL/bin/tenant.sh"
 
 # The tenant directory IS the configuration directory, so the agent writes its runtime state into
-# the repository. `projects/` is the one that matters: it holds full session transcripts, which carry
-# every file read and every command run — the most disclosing artifact this design has to keep out of
-# a commit. Ignored before anything else is installed, so a first run cannot stage them.
-ignore '/.claude.json' '/.claude.json.backup' '/.credentials.json' '/backups/' '/file-history/' \
-       '/history.jsonl' '/projects/' '/sessions/' '/shell-snapshots/' '/statsig/' '/todos/'
+# the repository. `projects/` is the one that matters most: it holds full session transcripts, which
+# carry every file read and every command run — the most disclosing artifact this design has to keep
+# out of a commit. `skills/synced/` is the second of that kind rather than mere noise: it is the
+# account's copy of the skills the service bundles, and the directory it arrives in is named
+# `<account-id>_<org-id>`. Not `/skills/`, which is where this adapter puts tracked symlinks.
+#
+# The rest is state an agent rewrites as it runs — caches, fetch markers, a plan-mode scratch
+# directory. `/plans/` is ignored although doctrine/planning.md files plans in the context
+# repository: they are filed there deliberately, under `planning/`, and a draft the harness wrote is
+# not that. Ignored before anything else is installed, so a first run cannot stage any of them.
+#
+# settings.json is the agent's own file: written per machine from the fragment below, and written
+# *into* at runtime — a theme chosen in a session lands there, so a personal preference arrives as a
+# diff in a file every machine shares. Machine state, so ignored — unless the tenant tracks it,
+# which is that tenant saying it shares one. An adapter may create, never edit.
+settings=('/settings.local.json')
+git -C "$TENANT" ls-files --error-unmatch settings.json >/dev/null 2>&1 ||
+  settings+=('/settings.json')
+# One call, not one per line: "has the tenant said anything about this path" is a question about the
+# tenant's own lines, and a pattern this same call installs is not the tenant saying anything.
+ignore '/.claude.json' '/.claude.json.backup' '/.credentials.json' '/.last-cleanup' \
+       '/.last-update-result.json' '/backups/' '/cache/' '/downloads/' '/file-history/' \
+       '/history.jsonl' '/ide/' '/paste-cache/' '/plans/' '/plugins/' '/policy-limits.json' \
+       '/projects/' '/remote-settings.json' '/session-env/' '/sessions/' '/shell-snapshots/' \
+       '/skills/synced/' '/*.stamp.json' '/statsig/' '/tasks/' '/telemetry/' '/todos/' \
+       "${settings[@]}"
 
 mkdir -p "$TENANT/skills"
 for src in "$PROTOCOL"/doctrine/*.md; do

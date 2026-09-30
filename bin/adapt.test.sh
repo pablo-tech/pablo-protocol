@@ -68,12 +68,32 @@ printf 'token\n' >"$t/tenant/.credentials.json"
 # The untracked half of a policy file (§3). It holds the names the tenant must enforce and must not
 # publish, so staging it is the one mistake that undoes the whole reason it is a separate file.
 printf 'Initech\n' >"$t/tenant/.protocol/tenant.local"
+# The second artifact of that kind rather than mere noise: the agent syncs the account's copy of the
+# bundled skills into a directory named after the account and the organization, beside the skills
+# this adapter installs. Which is why the rule is `/skills/synced/` — a rule on `/skills/` would take
+# the tracked symlinks with it, and this pair is what says so.
+mkdir -p "$t/tenant/skills/synced/acct1234_org5678/.staging"
+printf '{}\n' >"$t/tenant/skills/synced/acct1234_org5678/manifest.json"
 git -C "$t/tenant" add -A 2>/dev/null
 check "the agent's own transcripts and credentials cannot be staged" \
   "[ -z \"\$(git -C '$t/tenant' diff --cached --name-only | grep -E '^(projects/|\\.credentials)')\" ]"
 check "nor can a policy file's untracked overlay" \
   "[ -z \"\$(git -C '$t/tenant' diff --cached --name-only | grep 'tenant\\.local')\" ]"
+check "nor the skills the account syncs, while the ones installed here still stage" \
+  "[ -z \"\$(git -C '$t/tenant' diff --cached --name-only | grep 'skills/synced')\" ] &&
+   git -C '$t/tenant' diff --cached --name-only | grep -qx 'skills/warp/SKILL.md'"
 git -C "$t/tenant" reset -q
+
+# The rest of what the agent writes as it runs. Each of these was found by reading `git status` in a
+# tenant and patched into that one tenant's .gitignore, which left the next tenant to find it again.
+for pattern in /cache/ /plans/ /plugins/ /policy-limits.json '/*.stamp.json' /tasks/; do
+  check "the agent's $pattern is ignored" "grep -qxF -- '$pattern' '$t/tenant/.gitignore'"
+done
+# The agent writes into its settings file at runtime — a theme chosen in a session lands there — so a
+# personal preference would otherwise arrive as a diff in a file every machine of this tenant shares.
+check "the settings the agent writes into are machine-local, both files" \
+  "grep -qx '/settings.json' '$t/tenant/.gitignore' &&
+   grep -qx '/settings.local.json' '$t/tenant/.gitignore'"
 
 # Every file in the tenant, hashed: `record` below rewrites rather than skips, so "a second run
 # changes nothing" stopped being readable off the output alone and is measured instead.
@@ -184,6 +204,18 @@ check "an instruction file the tenant already wrote is never edited" \
 check "nor is a settings file, which is named rather than merged into" \
   "[ \"\$(cat '$t/tenant/settings.json')\" = '{\"permissions\":{}}' ] &&
    grep -q 'settings.json exists' <<<\"\$out\""
+
+# Ignoring that file is the adapter's answer to the agent writing into it, not a rule about what a
+# tenant may share. A tenant that tracks it has answered for itself, and an ignore rule appended
+# under a tracked file is inert anyway — a line that says something untrue about the tree.
+fresh
+printf '{"permissions":{}}\n' >"$t/tenant/settings.json"
+git -C "$t/tenant" add settings.json
+adapt --agent claude-code >/dev/null
+check "a settings file the tenant tracks is left tracked, with no rule appended about it" \
+  "! grep -qx '/settings.json' '$t/tenant/.gitignore'"
+check "and the local overlay beside it is ignored regardless" \
+  "grep -qx '/settings.local.json' '$t/tenant/.gitignore'"
 
 fresh
 adapt --copy --agent claude-code >/dev/null
