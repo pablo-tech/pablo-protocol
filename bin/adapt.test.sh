@@ -27,9 +27,10 @@ check "the tenant gets a denylist to fill in" "[ -f '$t/tenant/.protocol/tenant'
 check "the pre-commit shim is installed and executable" "[ -x '$t/tenant/.githooks/pre-commit' ]"
 check "git is pointed at it, which a clone does not carry" "[ \"\$(git -C '$t/tenant' config --get core.hooksPath)\" = .githooks ]"
 check "the well-known path resolves to this checkout" "[ \"\$(readlink -f '$t/home/.pablo-protocol')\" = '$PROTOCOL' ]"
-# And is reported as ~/..., which it was not: an unquoted ~ in the replacement half of
+# And is reported as ~/..., which it was not. An unquoted ~ in the replacement half of
 # ${var/pat/repl} is tilde-expanded back to $HOME, so the one line written to shorten a home path
-# printed it in full, on every run, for every tenant.
+# printed it in full; quoting the ~ fixed that from bash 4 on and printed '~'/... under the 3.2
+# macOS ships, which is why neither form survives here.
 check "and is reported under ~, not as somebody's absolute home" \
   "grep -qE '^  (link|skip) +~/\\.pablo-protocol$' <<<\"\$(adapt)\""
 
@@ -38,7 +39,7 @@ check "and is reported under ~, not as somebody's absolute home" \
 wired=0
 for f in "$PROTOCOL"/doctrine/*.md; do [ "${f##*/}" = README.md ] || wired=$((wired+1)); done
 check "every doctrine file is offered as a skill" \
-  "[ \"\$(ls '$t/tenant/skills' | wc -l)\" = $wired ]"
+  "[ \$(ls '$t/tenant/skills' | wc -l) -eq $wired ]"
 check "but the index beside them is not, not being a doctrine document" \
   "[ ! -e '$t/tenant/skills/README' ] && [ ! -L '$t/tenant/skills/README' ]"
 check "a skill is a symlink to the doctrine file, not a second copy" "[ -L '$t/tenant/skills/warp/SKILL.md' ]"
@@ -49,7 +50,7 @@ check "that symlink resolves through the tenant's own protocol entry" \
 # then skips forever — the install would report `link` once and never be readable.
 cmds="$PROTOCOL/adapters/claude-code/commands"
 check "every command the adapter carries is offered" \
-  "[ \"\$(ls '$t/tenant/commands' | wc -l)\" = \"\$(ls '$cmds' | wc -l)\" ]"
+  "[ \$(ls '$t/tenant/commands' | wc -l) -eq \$(ls '$cmds' | wc -l) ]"
 check "a command is a symlink, not a second copy" "[ -L '$t/tenant/commands/turn-cost.md' ]"
 check "and it resolves through the tenant's own protocol entry" \
   "[ \"\$(readlink -f '$t/tenant/commands/turn-cost.md')\" = \\

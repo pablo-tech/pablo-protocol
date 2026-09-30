@@ -70,11 +70,36 @@ jobs:
             exit 1
           fi
 
+  # The same suites under the bash a tenant is as likely to be installed with. macOS ships 3.2 as
+  # /bin/bash — a 2007 release, kept for licensing reasons — and BSD userland besides, and the two
+  # bugs that prompted this job were a parameter expansion that works only from bash 4 on and a
+  # `wc -l` whose count is padded here and not there. Neither could fail on ubuntu-latest, so a
+  # protocol that installs itself on whatever machine a tenant has was tested on one kind of
+  # machine.
+  #
+  # A separate job rather than a matrix on `test`: a matrix renames that job's check, and the one
+  # required check is named `test`. Only the suites run here — shellcheck, the tenancy scan and the
+  # sign-off check are questions about the tree rather than about the shell, and asking them twice
+  # buys nothing.
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: The bash a tenant may be installing with
+        run: /bin/bash --version | head -1
+
+      - name: Every suite
+        run: bin/test.sh
+
   # A tag is a human-readable name for one commit, not a distribution: nothing is published to a
   # registry, so this cuts a GitHub release and stops. It needs no token beyond the run's own.
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [test]
+    needs: [test, macos]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

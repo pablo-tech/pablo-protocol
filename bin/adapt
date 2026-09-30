@@ -101,14 +101,18 @@ record() {
 echo "protocol: $PROTOCOL"
 echo "tenant:   $TENANT"
 
+# Not ${1/#"$HOME"/'~'}: an unquoted ~ in the replacement half is tilde-expanded straight back to
+# $HOME, and quoting it works only from bash 4 on — 3.2, which is what macOS ships as
+# /bin/bash, keeps the quotes and prints '~'/.pablo-protocol. `case` reads the same to every
+# version, and a tenant is installed with whichever bash the machine has.
+short() { case "$1" in "$HOME"|"$HOME"/*) printf '~%s' "${1#"$HOME"}" ;; *) printf '%s' "$1" ;; esac; }
+
 # The well-known path is what a repository's pre-commit shim falls back to, so the shim never has to
 # carry a machine-local path. Left alone if it already points somewhere — that is someone's choice.
-# `'~'` quoted: an unquoted ~ in the replacement half of ${var/pat/repl} is tilde-expanded back to
-# $HOME, so the line printed the absolute path it was written to shorten and nothing said so.
 if [ -e "$WELL_KNOWN" ] || [ -L "$WELL_KNOWN" ]; then
-  say skip "${WELL_KNOWN/#"$HOME"/'~'}"
+  say skip "$(short "$WELL_KNOWN")"
 else
-  ln -s "$PROTOCOL" "$WELL_KNOWN"; say link "${WELL_KNOWN/#"$HOME"/'~'}"
+  ln -s "$PROTOCOL" "$WELL_KNOWN"; say link "$(short "$WELL_KNOWN")"
 fi
 
 place "$PROTOCOL" "$TENANT/protocol"
