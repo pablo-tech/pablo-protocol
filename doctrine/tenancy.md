@@ -1,6 +1,6 @@
 ---
 name: tenancy
-description: Working for more than one tenant from one set of tools — what a tenant is, why the commit is the only boundary that binds every agent, how .protocol/tenant declares the ones this repo is not, and the four controls in order of what actually carries weight.
+description: Working for more than one tenant from one set of tools — what a tenant is, why the commit is the only boundary that binds every agent, how .protocol/tenant declares the ones this repo is not, the four controls in order of what actually carries weight, and why a tenant reports a protocol defect on itself rather than upstream.
 ---
 
 # Tenancy
@@ -62,3 +62,30 @@ the categories and leaves the proper nouns on the machine that needs them.
 
 The ordering matters more than the list. A great deal of effort is commonly spent on 3 while 1 is
 quietly violated, which buys nothing.
+
+## Reporting a defect in the shared protocol
+
+The protocol is the one repository every tenant shares, which makes a pull request against it the
+one route by which a tenant's material leaves the tenant without passing the control that protects
+it. The guard judges a commit in the tenant's own repository. A branch pushed to the shared
+repository is not that, and neither is a pull-request body, a pasted terminal session, an error
+message quoted in full, or a path that appears in a diff only as the context around the line being
+changed. The shared repository's own denylist cannot close the gap: it carries identifier shapes and
+the words a tenancy is described with, and the one thing it must never carry is a tenant's proper
+nouns — which are exactly the terms that would have to be listed to catch them.
+
+So the report is filed where the control already runs. **A tenant reports a defect in the protocol
+as an issue in its own context repository**, not as an issue or a pull request in the shared one.
+Written there it is the tenant's material in the tenant's repository, judged by the tenant's own
+denylist like every other line it holds, and readable by exactly whoever is entitled to read that
+repository. Whoever maintains the protocol reads it there and writes the fix in the shared
+repository, from a machine holding none of that tenant's material.
+
+The round trip is the point rather than the cost. Nothing crosses from a tenant into the shared
+layer except a description of a defect, restated as the general thing it is — and a defect that
+could only be explained by naming the tenant that found it is one the shared repository could not
+have carried anyway.
+
+A tenant whose material is not sensitive gains nothing from an exception here, and granting one is
+how the rule stops being a rule: the route that is safe on an ordinary day is the route somebody
+takes on the day it is not.
