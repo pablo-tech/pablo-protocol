@@ -16,6 +16,26 @@ move with `main` can stop at.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`bin/adapt` prints the well-known path as `~/.pablo-protocol` under every bash, not `'~'/…`
+  under the one macOS ships.** The line that shortens a home path used `${var/#"$HOME"/'~'}`; the
+  quotes are what stop the `~` being expanded straight back to `$HOME`, and honouring them is a
+  bash 4 behaviour. Under the 3.2 that is `/bin/bash` on macOS the quotes are kept and printed, so
+  the fix for one platform was a defect on the other. A `case` reads the same to both, and an
+  install runs with whichever bash the machine has.
+- **`bin/adapt.test.sh` no longer fails on a correct count under BSD `wc`**, which pads its output
+  where GNU's does not, so `"       8" = 8` was false with eight skills installed. Both counts are
+  compared as numbers.
+
+### Added
+
+- **CI runs the suites on `macos-latest` as well.** Neither bug above can fail on `ubuntu-latest`,
+  and a protocol that installs itself on whatever machine a tenant has was being tested on one kind
+  of machine. A separate job rather than a matrix, so the one required check keeps its name; only
+  the suites run there, since shellcheck, the tenancy scan and the sign-off check are questions
+  about the tree rather than about the shell. A tag now needs it green before it cuts a release.
+
 ## [0.6.0] — 2026-09-30
 
 ### Changed
