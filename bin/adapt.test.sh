@@ -74,35 +74,51 @@ check "nor can a policy file's untracked overlay" \
   "[ -z \"\$(git -C '$t/tenant' diff --cached --name-only | grep 'tenant\\.local')\" ]"
 git -C "$t/tenant" reset -q
 
-# shellcheck disable=SC2034 # read inside the check expression below, which shellcheck does not follow
-again="$(adapt --agent claude-code)"
-check "a second run changes nothing" \
-  "! grep -qE '^  (link|copy|seed|write|ignore|config|pin|strip) ' <<<\"\$again\""
-
-# The pin. `protocol/` is a symlink, so the checkout behind it can be moved on with nothing in the
-# tenant changing; the version written down is the only signal that happened, and bin/doctor reads
-# it back. What is asserted here is that the installer writes what it actually installed.
-fresh
+# Every file in the tenant, hashed: `record` below rewrites rather than skips, so "a second run
+# changes nothing" stopped being readable off the output alone and is measured instead.
+digest() { find "$t/tenant" -name .git -prune -o -type f -print0 | sort -z | xargs -0 -r sha256sum | sha256sum; }
 # shellcheck disable=SC2034 # read inside the check expressions below, which shellcheck does not follow
-tag="$(git -C "$PROTOCOL" describe --tags --exact-match 2>/dev/null)"
+before="$(digest)"
+# shellcheck disable=SC2034 # as above
+again="$(adapt --agent claude-code)"
+check "a second run installs nothing" \
+  "! grep -qE '^  (link|copy|seed|write|ignore|config|strip) ' <<<\"\$again\""
+# `record` is deliberately not in that list: the receipt is rewritten on every run, because one that
+# states an install other than the last is the drift it exists to report. What keeps the run
+# idempotent is that every field it writes is read out of the protocol checkout, so the same commit
+# writes the same bytes — which is the thing worth asserting, and is asserted.
+check "and leaves every file in the tenant byte for byte as it was" \
+  "[ \"\$(digest)\" = \"\$before\" ]"
+
+# The receipt. `protocol/` is a symlink, so the checkout behind it can be moved on with no file in
+# the tenant changing; what is written down is which commit the files installed here came from, and
+# bin/doctor reads it back. What is asserted here is that the installer records the checkout it ran
+# out of, rather than anything a reader typed.
+fresh
+ref="$(git -C "$PROTOCOL" symbolic-ref --short -q HEAD 2>/dev/null \
+  || git -C "$PROTOCOL" describe --tags --exact-match 2>/dev/null \
+  || git -C "$PROTOCOL" rev-parse --short HEAD)"
+# shellcheck disable=SC2034 # as above
+want="$ref $(git -C "$PROTOCOL" rev-parse --short HEAD) $(git -C "$PROTOCOL" log -1 --format=%as)"
+receipt() { sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$t/tenant/.protocol/protocol-version"; }
 adapt >/dev/null
-check "the tenant gets the pin file, seeded from the template" \
+check "the tenant gets the receipt file, seeded from the template" \
   "[ -f '$t/tenant/.protocol/protocol-version' ]"
-check "and the install records the tag it installed, or says there was none" \
-  "if [ -n \"\$tag\" ]; then
-     [ \"\$(sed -e 's/#.*//' -e '/^[[:space:]]*\$/d' '$t/tenant/.protocol/protocol-version')\" = \"\$tag\" ]
-   else grep -q '^# unpinned' '$t/tenant/.protocol/protocol-version'; fi"
-# Moving a pin is a deliberate act: reading what changed, checking the protocol out, editing the
-# file. An installer that rewrote it would make that act a side effect of running the installer.
+check "and the install writes the ref, commit and date it installed from" \
+  "[ \"\$(receipt)\" = \"\$want\" ]"
+# The seed's header is what tells the next reader not to edit the line under it, so the rewrite keeps
+# it. A `>` that took the whole file would delete the instructions on its first run.
+check "under the header the template carries, which the rewrite keeps" \
+  "[ \"\$(head -1 '$t/tenant/.protocol/protocol-version' | cut -c1)\" = '#' ]"
+# Unlike every other file here, which is written once and skipped forever: a hand-edited line claims
+# an install that never happened, and there is no reading of this file under which that is true.
 printf '%s\n' 'v0.0.1' >"$t/tenant/.protocol/protocol-version"
 adapt >/dev/null
-check "a pin the tenant already wrote is never rewritten" \
-  "[ \"\$(cat '$t/tenant/.protocol/protocol-version')\" = v0.0.1 ]"
-# And it says which pin it kept. `skip <path>` was printed here by the seed above and again by this
-# step, so one file appeared twice under one word — which reads as the installer repeating itself
-# rather than as two answers to two questions.
-check "the pin it kept is named, not reported as another skipped file" \
-  "grep -qE '^  keep +v0\\.0\\.1$' <<<\"\$(adapt)\""
+check "a line edited by hand is overwritten, not kept" "[ \"\$(receipt)\" = \"\$want\" ]"
+# And says which line it wrote. `skip <path>` is printed for this file by the seed, so a second word
+# for the same path would read as the installer repeating itself rather than as two separate answers.
+check "the receipt it wrote is named, not reported as another skipped file" \
+  "grep -qE '^  record +[^ ]+ +[0-9a-f]{7,} +[0-9]{4}-[0-9]{2}-[0-9]{2}$' <<<\"\$(adapt)\""
 check "so no path is reported skipped twice in one run" \
   "[ \"\$(adapt | awk '\$1 == \"skip\"' | sort | uniq -d)\" = '' ]"
 
@@ -134,7 +150,7 @@ check "and so is the connection file beside them, which names an account and a k
 # shellcheck disable=SC2034 # as above
 twice="$(adapt --agent cortex)"
 check "a second run of that adapter changes nothing either" \
-  "! grep -qE '^  (link|copy|seed|write|ignore|config|pin|strip) ' <<<\"\$twice\""
+  "! grep -qE '^  (link|copy|seed|write|ignore|config|strip) ' <<<\"\$twice\""
 printf 'account = "x"\n' >"$t/tenant/.agents/cortex/connections.toml"
 git -C "$t/tenant" add -A 2>/dev/null
 check "so a git add -A cannot stage it" \

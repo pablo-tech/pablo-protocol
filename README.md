@@ -166,8 +166,8 @@ server-side push limit, which is the wrong end of the trade — see step 2.
 6. **A second tenant, and then a change.** A new tenant starts from
    [`tenant-template/`](tenant-template/) and runs `bin/adapt` from inside itself; it now has the
    same rule and the same guard. Raise the ceiling in `doctrine/git.md` and `guards/size-guard.sh`,
-   both tenants move their pin, and every agent in both has the new number. Nothing was copied, so
-   nothing can disagree.
+   both tenants pull their protocol checkout, and every agent in both has the new number. Nothing
+   was copied, so nothing can disagree.
 
    ```bash
    git init my-context && cd my-context
@@ -178,8 +178,9 @@ server-side push limit, which is the wrong end of the trade — see step 2.
    `bin/adapt` symlinks this repository in as `protocol/`, gitignores that path because it is
    machine-local, seeds any template file the tenant lacks, points `core.hooksPath` at
    `.githooks`, creates `~/.pablo-protocol` as the well-known path the shim falls back to, and
-   wires whichever AI coding agents the machine has. Run it twice and the second run changes
-   nothing: every line is a `skip`, save the `keep` that names the pin already written down.
+   wires whichever AI coding agents the machine has. Run it twice and the second run installs
+   nothing — every line is a `skip`, save the `record` that writes down which commit of this
+   protocol the files came from, and which writes the same bytes from the same commit.
 
 **The point.** Step 4 binds a diff written by hand, by an editor, or by an agent that does not
 exist yet — none of which is reachable from inside one agent's configuration file. Step 5 is the
@@ -205,7 +206,7 @@ what the repository is protecting — [`ARCHITECTURE.md`](ARCHITECTURE.md) §3.
 | [`bin/adapt`](bin/adapt) | the installer, idempotent, `--copy` for a machine that will not follow symlinks |
 | [`adapters/`](adapters/) | one small directory per AI coding agent, each holding `detect.sh` and `adapt.sh` |
 | [`tenant-template/`](tenant-template/) | the files a new tenant starts from, each one a seed to edit |
-| [`bin/doctor`](bin/doctor) | run inside a tenant: the pin, the symlinks, the hook, the denylist and each installed launcher, checked against what is on disk |
+| [`bin/doctor`](bin/doctor) | run inside a tenant: which protocol it is on and how far behind, the symlinks, the hook, the denylist and each installed launcher, checked against what is on disk |
 
 A guard reads its policy from a file the *tenant* carries under `.protocol/`, and a guard whose
 policy file is absent exits 0. That is what makes one shared chain safe to point at any checkout:

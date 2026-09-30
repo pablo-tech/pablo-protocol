@@ -2,10 +2,13 @@
 
 ## Supported versions
 
-Only `main` receives fixes. Consumers clone this repository and pin a tag or a commit, so a fix
-reaches you when you move the pin and re-run `bin/adapt`. Nothing is published to a registry: a tag
-is a human-readable name for one commit, not a supported branch, and an older tag gets no backport.
-[CHANGELOG.md](CHANGELOG.md) is what moving a pin gets you.
+Only `main` receives fixes, and nothing is published to a registry. A consumer clones this
+repository: a fix reaches a tenant that tracks a branch on the next `git pull` in its protocol
+checkout, and a tenant that would rather stay at a tag when it checks out a newer one. Either way
+`bin/adapt` is re-run afterwards, which is what refreshes the files installed in the tenant itself.
+
+A tag is a human-readable name for one commit, not a supported branch, and an older tag gets no
+backport. [CHANGELOG.md](CHANGELOG.md) is what pulling gets you.
 
 ## Scope
 
