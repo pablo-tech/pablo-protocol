@@ -147,6 +147,14 @@ An adapter is a directory under `adapters/` holding `detect.sh`, `adapt.sh` and 
 - **`doctrine/README.md` is the directory's index, not a doctrine document**, and an adapter that
   walks `doctrine/*.md` excludes it. It carries no `name`/`description` frontmatter, so wiring it
   would install something the agent cannot read.
+- **A script the adapter installs is a file in the adapter, never a heredoc inside `adapt.sh`.**
+  `adapters/cortex/run` is the example: tracked here, copied into the tenant unchanged, and so
+  covered by the sweep that shellchecks every tracked file with a shebang. A script written from a
+  string inside another script is a script no checker can see, and the tenant runs it anyway.
+  `bin/doctor` compares each `adapters/*/run` with the tenant's copy for the same reason the pin is
+  compared with the checkout: the adapter writes the file whole and `bin/adapt` then skips it
+  forever, so a tenant installed before the adapter changed keeps the old one silently. It reports
+  the difference as a note, because a tenant may have meant it.
 
 The guarantee a consumer may rely on: **deleting every adapter leaves the protocol intact.**
 `bin/adapt` runs on a machine with none and says so.
