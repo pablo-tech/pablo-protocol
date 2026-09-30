@@ -178,8 +178,8 @@ server-side push limit, which is the wrong end of the trade — see step 2.
    `bin/adapt` symlinks this repository in as `protocol/`, gitignores that path because it is
    machine-local, seeds any template file the tenant lacks, points `core.hooksPath` at
    `.githooks`, creates `~/.pablo-protocol` as the well-known path the shim falls back to, and
-   wires whichever AI coding agents the machine has. Run it twice and the second run prints `skip`
-   for every line.
+   wires whichever AI coding agents the machine has. Run it twice and the second run changes
+   nothing: every line is a `skip`, save the `keep` that names the pin already written down.
 
 **The point.** Step 4 binds a diff written by hand, by an editor, or by an agent that does not
 exist yet — none of which is reachable from inside one agent's configuration file. Step 5 is the
