@@ -87,6 +87,20 @@ the directory. Bring a `*.test.sh` if the adapter does anything a shell can asse
 - Prose in `doctrine/` is held to `doctrine/clean-code.md`, which applies to documents for the same
   reason it applies to functions: a bloated or duplicated document is paid for by every reader.
 
+## Reporting a defect you found inside a tenant
+
+If you hit it while using this protocol in a tenant's own repository, file it **there** rather than
+here — [`doctrine/tenancy.md`](doctrine/tenancy.md#reporting-a-defect-in-the-shared-protocol) is the
+reason, and it is the same reason as the rule two sections up. A report written in that repository
+is judged by that repository's denylist before it is published; a pull request opened here is
+judged by nothing that knows what that tenant's material looks like, and a diff carries more than
+the lines it changes.
+
+So a pull request that arrives that way is closed in favour of an issue filed where it belongs, and
+the fix is then written here, stated as the general property rather than as the case that found it.
+That restatement is not a formality: a fix that can only be explained by naming the tenant that
+found it is one this repository could not have carried.
+
 ## Reporting a security issue instead of filing a pull request
 
 See [SECURITY.md](SECURITY.md) — vulnerabilities go through GitHub's private vulnerability

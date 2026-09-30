@@ -16,6 +16,18 @@ move with `main` can stop at.
 
 ## [Unreleased]
 
+### Added
+
+- **A tenant reports a defect in the protocol as an issue in its own repository, not as a pull
+  request here** (`doctrine/tenancy.md`). The guard a tenant relies on judges a commit in that
+  tenant's repository, and a pull request opened here is none of those things — not the branch, not
+  the body, not a pasted terminal session, not the unchanged lines a diff carries as context. This
+  repository's own denylist cannot cover the gap either, since the terms that would catch a tenant's
+  material are the proper nouns it exists in order not to hold. Filing in the tenant's repository
+  puts the report back inside the control that was already running when it was written, and what
+  crosses into this repository is a description of a defect restated as the general thing it is.
+  `CONTRIBUTING.md` says what happens to a pull request that arrives the other way.
+
 ## [0.6.0] — 2026-09-30
 
 ### Changed
