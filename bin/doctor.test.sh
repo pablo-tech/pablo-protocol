@@ -88,6 +88,14 @@ check "a shim that never consults the tenant's own protocol is a failure" \
 # `bin/adapt` seeds that file and then never rewrites it, so advising a re-run would be advising a
 # no-op — the remedy a tenant follows has to be one that does something.
 check "and the remedy it names is the one that works" "refuses tenant-template"
+# A tenant that replaced the shim with a dispatcher of its own resolves the guards somewhere this
+# cannot read, so the question is not answerable and is not asked. Reporting a fault against a
+# repository that is wired correctly is how a check gets scrolled past.
+# shellcheck disable=SC2016 # the shim is written out verbatim, not evaluated here
+printf '#!/usr/bin/env bash\nexec "$(git rev-parse --show-toplevel)/hooks/mine.sh"\n' \
+  >"$t/tenant/.githooks/pre-commit"
+check "a shim this protocol did not write is left alone" \
+  "! grep -q 'never consults' <<<\"\$(doctor)\""
 
 # A launcher is the adapter's, not the tenant's: written whole, then skipped forever because it
 # exists. A tenant installed before the adapter changed keeps the old one with nothing to see.

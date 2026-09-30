@@ -112,6 +112,12 @@ The well-known path is what keeps a machine-local path out of every tenant's com
 `bin/adapt` creates it and **never repoints an existing one**: where it already exists, that is
 somebody's choice.
 
+**A tenant may write its own shim, and some do** — one that dispatches guards of its own alongside
+these, for instance. Then this order is that tenant's to honour, and `bin/doctor` says nothing
+about it: it can read the order out of a shim that came from `tenant-template/`, and not out of a
+dispatcher it has never seen. A check that reported a fault against a correctly wired repository
+would be a check people learn to scroll past.
+
 `core.hooksPath` is local configuration and does not travel with a clone, so a fresh clone runs no
 hooks until `bin/adapt` (or `git config core.hooksPath .githooks`) is run in it. There is no way
 around this in git, which is the second reason the guards are not the only control.
