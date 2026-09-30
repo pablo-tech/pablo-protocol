@@ -16,6 +16,8 @@ move with `main` can stop at.
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-09-30
+
 ### Changed
 
 - **`.protocol/protocol-version` is a receipt rather than a pin, and a tenant is expected to track
@@ -42,6 +44,13 @@ move with `main` can stop at.
   **For a tenant:** check the protocol clone out on `main`, re-run `bin/adapt`, and commit the line
   it writes. Do not hand-edit that line again — it claims an install that never happened, and the
   next run overwrites the claim.
+
+- **A plan is warp-ready or it is not a plan** (`doctrine/planning.md`). The rule was already
+  there and hedged: "a warp-ready plan by default" named an exception without saying what earns
+  one, so the plan that reached for it was always the small change — which is exactly the plan that
+  then arrives with no worktree, no pre-phase SHA and no per-phase undo. The hedge is gone. It also
+  closes the reading that the seven fields may be carried once for a whole plan rather than per
+  phase, which the section above it already forbade.
 
 ### Fixed
 
@@ -244,7 +253,8 @@ move with `main` can stop at.
 - The agent's own runtime state — session transcripts above all — is refused by the Claude adapter's
   ignore rules before the first session can write any.
 
-[Unreleased]: https://github.com/pablo-tech/pablo-protocol/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/pablo-tech/pablo-protocol/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/pablo-tech/pablo-protocol/compare/v0.5.2...v0.6.0
 [0.5.2]: https://github.com/pablo-tech/pablo-protocol/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/pablo-tech/pablo-protocol/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/pablo-tech/pablo-protocol/compare/v0.4.0...v0.5.0
