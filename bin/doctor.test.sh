@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# bin/doctor against scratch tenants: each of the four questions, and the one thing it must not print.
+# bin/doctor against scratch tenants: each question it asks, and the one thing it must not print.
 #   bash bin/doctor.test.sh
 set -uo pipefail
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -85,6 +85,24 @@ fresh; repoint; pin v9.9.9
 sed -i'' -e '/protocol\/guards\/guards.sh/d' "$t/tenant/.githooks/pre-commit"
 check "a shim that never consults the tenant's own protocol is a failure" \
   "refuses \"never consults this repository's own protocol\""
+# `bin/adapt` seeds that file and then never rewrites it, so advising a re-run would be advising a
+# no-op — the remedy a tenant follows has to be one that does something.
+check "and the remedy it names is the one that works" "refuses tenant-template"
+
+# A launcher is the adapter's, not the tenant's: written whole, then skipped forever because it
+# exists. A tenant installed before the adapter changed keeps the old one with nothing to see.
+rm -rf "${t:?}/tenant" "${t:?}/home"; mkdir -p "$t/home"; git init -q "$t/tenant"
+git -C "$t/tenant" config user.email t@example.invalid
+git -C "$t/tenant" config user.name Test
+(cd "$t/tenant" && HOME="$t/home" bash "$DIR/adapt" --agent cortex >/dev/null 2>&1)
+check "a launcher matching the one this protocol installs is not mentioned at all" \
+  "! grep -q '.agents/cortex/run' <<<\"\$(doctor)\""
+printf '\n# edited on the machine\n' >>"$t/tenant/.agents/cortex/run"
+check "one that does not match is reported" "says '.agents/cortex/run differs'"
+# A note, not a failure: the file is the adapter's, but nothing here knows whether the difference is
+# an old install or someone who meant it, and a doctor that fails on both is one nobody runs.
+check "as a note, because a tenant may have meant it" \
+  "grep -q 'note  .agents/cortex/run' <<<\"\$(doctor)\""
 
 # The count, and only the count: a doctor that printed the terms would publish, in whatever log it
 # runs in, the list the untracked overlay exists to keep out of anything readable.

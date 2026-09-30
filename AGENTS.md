@@ -52,7 +52,9 @@ AGENTS.md            the tenant's own file: its facts, and a pointer to protocol
 
 `bin/doctor`, run from inside a tenant, checks those five against what is actually on disk — the
 pin against the checkout, every skill symlink against its target, `core.hooksPath` against a
-clone that does not carry it, and the denylist by term count.
+clone that does not carry it, and the denylist by term count. It also notes, without failing, a
+launcher the installer wrote whole and has skipped ever since, still carrying what an older
+version of this protocol put there.
 
 Anything an agent needs that is true of *this tenant only* — which repository owns what, where its
 credentials live, how its machines are set up — goes in the tenant's own `AGENTS.md`, never here.

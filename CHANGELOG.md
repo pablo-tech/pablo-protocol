@@ -14,6 +14,32 @@ announced here first.
 
 ## [Unreleased]
 
+## [0.5.1] — 2026-09-29
+
+### Fixed
+
+- **`bin/doctor`'s remedy for a stale pre-commit shim named an action that does nothing.** It said
+  to re-run `bin/adapt`, which seeds that file and then skips it forever because it exists — so a
+  tenant that followed the advice saw the installer say nothing and the fault persist. It now names
+  the copy from `tenant-template/` and says outright that the installer will not do it. A remedy a
+  reader can carry out and still be wrong is worse than no remedy.
+- **The cortex launcher is a file in the adapter rather than a heredoc inside it.**
+  `adapters/cortex/run` is tracked and copied into the tenant unchanged, so the sweep that
+  shellchecks every tracked file with a shebang covers the script tenants actually run: a script
+  written from a string inside another script is a script no checker can see. The SC2155 it had
+  been carrying — `export SNOWFLAKE_HOME="$(cd ...)"`, whose exit status is `export`'s, so a `cd`
+  into a directory that had moved would be silently successful — is fixed in the same move, and
+  every tenant installed from an earlier version still has it.
+
+### Added
+
+- **`bin/doctor` reports a launcher that differs from the one this protocol installs**, as a note
+  rather than a fault. A launcher is not a seed: the adapter writes it whole and the tenant does
+  not own it, but `bin/adapt` skips it forever once it exists, so a tenant installed before the
+  adapter changed keeps the old one with nothing anywhere to say so — the same shape of drift the
+  pin check exists for, one directory down. A note because nothing here can tell an old install
+  from a tenant that meant it, and a doctor that fails on both is one nobody runs.
+
 ## [0.5.0] — 2026-09-29
 
 ### Added
@@ -170,7 +196,8 @@ announced here first.
 - The agent's own runtime state — session transcripts above all — is refused by the Claude adapter's
   ignore rules before the first session can write any.
 
-[Unreleased]: https://github.com/pablo-tech/pablo-protocol/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/pablo-tech/pablo-protocol/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/pablo-tech/pablo-protocol/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/pablo-tech/pablo-protocol/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/pablo-tech/pablo-protocol/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/pablo-tech/pablo-protocol/compare/v0.2.0...v0.3.0

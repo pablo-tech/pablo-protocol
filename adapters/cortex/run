@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Cortex Code against this tenant's configuration directory, whatever the caller's environment —
+# the path for cron, CI, and any shell that never sourced a profile.
+#
+# `bin/adapt` copies this file into the tenant at `.agents/cortex/run`, unchanged. It is a file
+# rather than a heredoc inside `adapt.sh` so that it is a script in this repository: found by the
+# sweep that shellchecks every tracked file with a shebang, and by anyone reading the directory. A
+# script generated from a string is a script no checker can see.
+set -euo pipefail
+# Declared and assigned separately: in one statement the exit status is `export`'s, so a `cd` into a
+# directory that has been moved out from under this file would be silently successful.
+SNOWFLAKE_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export SNOWFLAKE_HOME
+exec "${CORTEX_BIN:-$HOME/.local/bin/cortex}" "$@"

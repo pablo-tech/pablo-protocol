@@ -10,6 +10,9 @@
 #   the hook       core.hooksPath does not travel with a clone, so a fresh clone runs no guards
 #   the tenancy    a denylist that parses to zero terms polices nothing and says nothing about it
 #
+# And one that is a note rather than a fault: a file the installer writes whole and then skips
+# forever, still carrying what an older version of this protocol wrote.
+#
 # Exit 1 if anything is wrong. Nothing here prints a policy file's contents: a denylist read
 # backwards is a list of what the repository is protecting, so the terms are counted, never named.
 set -uo pipefail
@@ -75,14 +78,29 @@ else
   bad "core.hooksPath is not .githooks" "git -C \"$TENANT\" config core.hooksPath .githooks"
 fi
 
-# The shim decides which checkout of the protocol the guards come from, and a tenant that has not
-# re-run bin/adapt since this step was added reads its doctrine from one checkout and runs its guards
-# from another — the well-known path, which is one per machine and cannot serve two pins.
+# The shim decides which checkout of the protocol the guards come from, and a tenant carrying one
+# from before this step existed reads its doctrine from one checkout and runs its guards from
+# another — the well-known path, which is one per machine and cannot serve two pins.
+#
+# The remedy is not "re-run bin/adapt": the installer seeds this file and then never rewrites it,
+# which is what makes it the tenant's to edit. Copying over it is a decision, so it is stated as one.
 if [ -x "$P/guards/guards.sh" ] && [ -f "$TENANT/.githooks/pre-commit" ] &&
    ! grep -q 'protocol/guards' "$TENANT/.githooks/pre-commit"; then
   bad ".githooks/pre-commit never consults this repository's own protocol/" \
-      "re-run the protocol's bin/adapt, or re-seed the shim from tenant-template/"
+      "cp protocol/tenant-template/.githooks/pre-commit .githooks/pre-commit (bin/adapt will not)"
 fi
+
+# A launcher is not a seed: the tenant does not own it, the adapter writes it whole, and `bin/adapt`
+# skips it forever after because it exists. So a tenant installed before the adapter changed keeps
+# the old one with nothing to see — the same shape of drift as the pin, one directory down.
+while IFS= read -r src; do
+  agent="$(basename "$(dirname "$src")")"
+  dst="$TENANT/.agents/$agent/run"
+  [ -f "$dst" ] || continue
+  cmp -s "$src" "$dst" && continue
+  note ".agents/$agent/run differs from the one this protocol installs" \
+       "cp protocol/adapters/$agent/run .agents/$agent/run, or keep yours deliberately"
+done < <(find "$P/adapters" -mindepth 2 -maxdepth 2 -name run -type f 2>/dev/null | sort)
 
 # 4. The tenancy. The count, and only the count. Read through the guards' own policy parser, so
 # what is counted here is what a guard would see rather than a second reading of the same file.

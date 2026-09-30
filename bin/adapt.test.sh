@@ -111,6 +111,11 @@ check "the tenant gets a configuration directory of its own for the second agent
   "[ -f '$t/tenant/.agents/cortex/cortex/settings.json' ]"
 check "and a launcher that points the agent at it, executable" \
   "[ -x '$t/tenant/.agents/cortex/run' ]"
+# Copied whole and never edited on the way in: it is a tracked file of this repository, so the sweep
+# that shellchecks every file with a shebang sees the thing the tenant actually runs, and
+# `bin/doctor` can tell an old install's launcher from the current one by comparing them.
+check "identical to the one this repository ships, byte for byte" \
+  "cmp -s '$DIR/../adapters/cortex/run' '$t/tenant/.agents/cortex/run'"
 check "its logs are ignored" "grep -qx '/.agents/\*/cortex/logs/' '$t/tenant/.gitignore'"
 check "and so is the connection file beside them, which names an account and a key path" \
   "grep -qx '/.agents/\*/connections.toml' '$t/tenant/.gitignore'"

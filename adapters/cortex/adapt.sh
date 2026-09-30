@@ -20,17 +20,14 @@ fi
 # connections.toml is the one that names an account and points at a key file.
 ignore '/.agents/*/cortex/logs/' '/.agents/*/connections.toml'
 
+# Copied, never linked: it is the tenant's entry point and has to keep working when `protocol/` is
+# not there. `run` is a file in this adapter rather than a heredoc here, so that the sweep over
+# every tracked file with a shebang sees it: a script written from a string inside another script
+# is a script nothing checks.
 if [ -e "$HOME_DIR/run" ]; then
   say skip .agents/cortex/run
 else
-  cat >"$HOME_DIR/run" <<'LAUNCH'
-#!/usr/bin/env bash
-# Cortex Code against this tenant's configuration directory, whatever the caller's environment —
-# the path for cron, CI, and any shell that never sourced a profile.
-set -euo pipefail
-export SNOWFLAKE_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec "${CORTEX_BIN:-$HOME/.local/bin/cortex}" "$@"
-LAUNCH
+  cp "$(dirname "${BASH_SOURCE[0]}")/run" "$HOME_DIR/run"
   chmod +x "$HOME_DIR/run"
   say write .agents/cortex/run
 fi
