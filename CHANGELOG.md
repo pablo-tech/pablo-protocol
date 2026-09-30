@@ -18,6 +18,20 @@ move with `main` can stop at.
 
 ### Added
 
+- **The identity guard reaches a repository worked on under a tenant.** Such a repository is given
+  the guard chain and nothing else — that is the point of it — so it carries no `.protocol/` and,
+  under the rule that an absent policy means no policy, its commits were made as whatever the
+  machine was configured with and nothing said so. Whatever wires it now records the tenant in its
+  local git configuration as `pabloProtocol.tenant`, next to the `core.hooksPath` it sets there
+  already, and `guards/identity-guard.sh` falls back to that tenant's `.protocol/identity` when the
+  repository has none of its own. The refusal names the file it was held to, since that file is not
+  in the repository being committed to. Local configuration is not in the tree and does not travel,
+  which is what makes it safe to read: nothing arriving over the network can point a guard at a
+  directory of its choosing. `guards/policy.sh` grows `tenant_root`, and `policy <name> [<root>]`
+  takes an optional root — this is the only guard that passes one, because a fallback is safe only
+  where inheriting tightens, and the credentials policies are exemptions. A repository that carries
+  `.protocol/identity`, empty or not, is judged by that and by nothing else.
+
 - **A guard for the identity a commit is made as** — `guards/identity-guard.sh`, fourth in the
   chain, reading `.protocol/identity`: the identities a repository's commits may be made as, one
   extended regular expression per line, matched against `Name <email>` for the author and for the

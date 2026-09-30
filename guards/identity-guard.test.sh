@@ -78,6 +78,47 @@ check "an identity carried only by the untracked overlay is claimed" "guard"
 as "Someone Else" "else@example.test"
 check "and the overlay is the only thing that claims it" "! guard"
 
+# --- a repository worked on under a tenant --------------------------------------------------------
+# Such a repository is deliberately not a tenant: it is given the guard chain and nothing else, so
+# there is no .protocol/ in its tree for it to claim anything in. Without the fallback below it is
+# the one place a commit is made under a tenant and judged by nobody — and it is where most of them
+# are made.
+mkdir -p "$t/tenant/.protocol"
+printf 'someone@example\\.test\n' >"$t/tenant/.protocol/identity"
+# What wired it recorded which tenant, in local git configuration, where core.hooksPath is: a
+# repository worked on under a tenant has nowhere in its tree to say this and should not have one.
+under() { git -C "$t/repo" config pabloProtocol.tenant "$1"; }
+
+scratch_repo "$t/repo" >/dev/null
+under "$t/tenant"
+as "Someone" "someone@example.test"
+check "a repository with no list of its own is held to its tenant's" "guard"
+as "Someone Else" "else@example.test"
+check "and refused by it" "! guard"
+
+# Being refused by a file that is not in the repository being committed to is unreadable unless the
+# report says which file, so it says which file.
+named="$( (cd "$t/repo" && bash "$DIR/identity-guard.sh" 2>&1) |
+          grep -c "$t/tenant/\.protocol/identity" || true)"
+check "and the refusal names the tenant's file, which is not in this repository" \
+  "[ $named -eq 1 ]"
+
+# Carrying the file is how a repository opts into the rule (ARCHITECTURE.md §3), so carrying an
+# empty one is a repository saying it claims nobody rather than one that has said nothing. The
+# tenant's list does not reach past an answer the repository has already given.
+claims '# this repository claims nobody, and means it'
+under "$t/tenant"
+as "Someone Else" "else@example.test"
+check "a list of its own, even an empty one, is the only list it is judged by" "guard"
+
+# A tenant that has moved or been removed leaves the setting behind pointing at nothing. Refusing
+# every commit in that repository until somebody re-runs an installer would be a guard picking a
+# fight it cannot win; it is the state the repository was in before it was ever wired.
+scratch_repo "$t/repo" >/dev/null
+under "$t/no-such-tenant"
+as "Someone Else" "else@example.test"
+check "a tenant path that is not there is ignored rather than fatal" "guard"
+
 # --- what reached the branch anyway ---------------------------------------------------------------
 claims 'someone@example\.test'
 as "Someone" "someone@example.test"
@@ -95,5 +136,17 @@ as "Someone" "someone@example.test"
 GIT_COMMITTER_NAME="Nobody" GIT_COMMITTER_EMAIL="nobody@example.invalid" \
   git -C "$t/repo" commit -qm "applied on someone's behalf" --no-verify --allow-empty
 check "--scan-history reads the committer of each commit as well as the author" "! scan HEAD~1.."
+
+# The audit mode reads the same list as the commit-time one, whichever repository that list is in —
+# it is the same question asked of commits already made, and a repository worked on under a tenant
+# is exactly where one gets made on a machine whose hook was never configured.
+scratch_repo "$t/repo" >/dev/null
+under "$t/tenant"
+as "Someone" "someone@example.test"
+commit "one the tenant claims"
+check "--scan-history passes a history the tenant claims" "scan"
+as "Someone Else" "else@example.test"
+commit "one it does not"
+check "and finds the commit it does not" "! scan"
 
 finish
