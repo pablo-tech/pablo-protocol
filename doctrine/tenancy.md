@@ -67,6 +67,15 @@ This one is an allowlist where the tenancy declaration is a denylist, for the re
 not: the identities a repository's commits are legitimately made as can be enumerated in advance —
 there are one or two — while the terms its work will legitimately contain cannot.
 
+Most of a tenant's commits are not made in the tenant. They are made in the repositories worked on
+under it, which are deliberately not tenants and so carry no declaration of their own — and a
+repository that declares nothing is policed by nothing, which is the right answer for a denylist
+and the wrong one here. So a repository with no `.protocol/identity` of its own falls back to the
+list of the tenant it is worked on under, named by `pabloProtocol.tenant` in its local git
+configuration by whatever wired it. It is the one policy that does this; the reasoning, and why it
+is safe only for a list that tightens, is [`ARCHITECTURE.md`](../ARCHITECTURE.md) §3. A repository
+that does carry the file is judged by that and by nothing else.
+
 ## The four controls, in order of what carries weight
 
 1. **Absence.** On a machine whose owner can read any file on it, the only real control is that the

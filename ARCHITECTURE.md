@@ -59,12 +59,37 @@ repository opts into a rule by carrying the file that configures it, never by be
 name from inside the guard.** A guard that special-cased a repository name would have to be edited
 every time a repository was added — and would be wrong the first time one was renamed.
 
+### A repository worked on under a tenant
+
+A repository that is merely *worked on* under a tenant is deliberately not a tenant: it is given the
+pre-commit shim and nothing else, so that nothing of the tenant's is in its tree for its own
+contributors and its own continuous integration to inherit. That leaves it with no `.protocol/` of
+its own, and so carrying every policy file absent — which by the rule above means policed by
+nothing. For the tenancy and credentials rules that is the right answer. For identity it is not:
+who a commit is made as is a question about this machine, and that repository is where most of this
+machine's commits are made.
+
+So whatever wires such a repository records the tenant in its **local git configuration**,
+`pabloProtocol.tenant`, alongside the `core.hooksPath` it sets there already. `tenant_root` in
+`guards/policy.sh` reads it, and a guard may pass the answer to `policy` as a second argument to
+read that tenant's file instead of this repository's. Local configuration is not in the tree and
+does not travel, which is also what makes it safe to read: nothing arriving over the network can
+set it and point a guard at a directory of its own choosing. The section is `pabloProtocol` rather
+than `protocol` because `protocol.*` is git's own.
+
+**A guard opts into that fallback one at a time, and only one does.** A fallback can only be safe
+where inheriting tightens: the identity guard inherits an allowlist, so the worked-on repository is
+held to more than it was. `credentials-allow-name` and `credentials-allow-content` are exemptions,
+and inheriting those would hand a repository the tenant's holes. The rule stands unchanged — the
+repository that carries `.protocol/identity` is judged by it and by nothing else, empty or not,
+because carrying the file is how a repository opts in and an empty one claims nobody.
+
 The policy files in use:
 
 | File | Guard | Contents |
 |---|---|---|
 | `.protocol/tenant` | `tenant-guard.sh` | extended regular expressions; the terms belonging to the tenants this repository is **not** |
-| `.protocol/identity` | `identity-guard.sh` | extended regular expressions; the identities this repository's commits may be made as |
+| `.protocol/identity` | `identity-guard.sh` | extended regular expressions; the identities this repository's commits may be made as. The one policy with a fallback — see above |
 | `.protocol/credentials-allow-name` | `credentials-guard.sh` | globs exempt from the *shape* rule — a file whose name looks like a credential and holds none |
 | `.protocol/credentials-allow-content` | `credentials-guard.sh` | globs that may *contain* credential-shaped text — the suites whose fixtures pin these rules |
 | `.protocol/<name>.local` | whichever guard reads `<name>` | the untracked overlay, appended to the tracked file of that name |
