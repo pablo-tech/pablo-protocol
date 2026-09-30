@@ -46,8 +46,9 @@ what is broken, what changes, what it costs, what the risk is — written for an
 know this codebase. A plan is read and approved phase by phase, so a summary that exists only at the
 top is not available at the moment anyone needs it.
 
-**A code task raised in planning mode means a warp-ready plan by default** — not a sketch to discuss
-and then re-plan.
+**A code task raised in planning mode is a warp-ready plan.** Not a sketch to discuss and then
+re-plan, and there is no lighter form for a small change: a plan that does not carry the fields above
+per phase is not a plan yet.
 
 ## Every plan sets up its own worktree, and names it as its first step
 
