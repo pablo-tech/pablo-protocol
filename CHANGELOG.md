@@ -34,6 +34,26 @@ move with `main` can stop at.
   check are questions about the tree rather than about the shell. A tag now needs it green before
   it cuts a release.
 
+### Changed
+
+- **The Claude Code adapter ignores everything that agent writes into a tenant, not the eleven paths
+  one machine had produced when the list was written.** Sixteen more are added, and one of them is
+  the reason it is here rather than in a tenant: `skills/synced/` is the account's copy of the
+  bundled skills, arriving in a directory named `<account-id>_<org-id>`, and until now only
+  discipline kept `git add -A` from staging that name. The rule is `/skills/synced/` and not
+  `/skills/`, which holds the tracked symlinks this adapter installs. The rest is runtime state —
+  caches, fetch markers, the harness's plan-mode scratch directory. Each had been found by reading
+  `git status` in one tenant and patched into that tenant's own `.gitignore`, which left the next
+  tenant to find it again; a tenant's existing rule still wins, so a pull changes nothing for a
+  tenant that already answered.
+- **`settings.json` is ignored too, unless the tenant tracks it.** The adapter writes that file per
+  machine from `settings-fragment.json`, and the agent writes *into* it as it runs — a theme chosen
+  in a session lands there, so a personal preference arrived as a diff in a file every machine of
+  that tenant shares. It is machine state, and is now named as such. A tenant that tracks the file
+  has answered the question for itself and gets no rule about it: an ignore line under a tracked
+  file is inert, and would say something untrue about the tree. `settings.local.json` is ignored
+  either way.
+
 ### Fixed
 
 - **`bin/adapt` prints the well-known path as `~/.pablo-protocol` under every bash, not `'~'/…`
