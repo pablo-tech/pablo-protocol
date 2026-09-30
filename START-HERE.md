@@ -66,5 +66,5 @@ fastest way to see the whole thing work at once.
 | what you may rely on, and what a breaking change is | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | to add support for another AI coding agent | [adapters/README.md](adapters/README.md) |
 | to change anything here | [CONTRIBUTING.md](CONTRIBUTING.md) |
-| what moving your pin gets you | [CHANGELOG.md](CHANGELOG.md) |
+| what your next pull gets you | [CHANGELOG.md](CHANGELOG.md) |
 | to report something that gets past a guard | [SECURITY.md](SECURITY.md) |

@@ -45,14 +45,15 @@ protocol/            this repository (symlinked; gitignored — it is a machine-
 AGENTS.md            the tenant's own file: its facts, and a pointer to protocol/AGENTS.md
 .protocol/tenant     the terms belonging to the tenants this repository is NOT
 .protocol/protocol-version
-                     the tag of this protocol the tenant consumes; protocol/ is a symlink, so
-                     this is the only thing that changes when the pin moves
+                     which commit of this protocol installed the tenant, rewritten by every run
+                     of bin/adapt — a receipt, never edited by hand
 .githooks/pre-commit the shim that runs protocol/guards/guards.sh
 ```
 
-`bin/doctor`, run from inside a tenant, checks those five against what is actually on disk — the
-pin against the checkout, every skill symlink against its target, `core.hooksPath` against a
-clone that does not carry it, and the denylist by term count. It also notes, without failing, a
+`bin/doctor`, run from inside a tenant, checks those five against what is actually on disk — which
+protocol `protocol/` resolves to and how far behind its origin it is, every skill symlink against
+its target, `core.hooksPath` against a clone that does not carry it, and the denylist by term
+count. It also notes, without failing, an install left behind by a protocol that has moved on, and a
 launcher the installer wrote whole and has skipped ever since, still carrying what an older
 version of this protocol put there.
 

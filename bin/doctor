@@ -5,12 +5,14 @@
 #   bin/doctor --in <dir>       check that directory
 #
 # Four questions, each of which has a silent wrong answer:
-#   the pin        `protocol/` is a symlink, so the checkout behind it can move with nothing changing
+#   the protocol   `protocol/` is a symlink, so the checkout behind it can move with no file here
+#                  changing — and a tenant that tracks a branch can also simply be behind it
 #   the links      a skill whose target has moved still lists, and fails only when something reads it
 #   the hook       core.hooksPath does not travel with a clone, so a fresh clone runs no guards
 #   the tenancy    a denylist that parses to zero terms polices nothing and says nothing about it
 #
-# And one that is a note rather than a fault: a file the installer writes whole and then skips
+# And two that are notes rather than faults, because neither breaks anything today: a protocol that
+# has moved on since `bin/adapt` last ran here, and a file the installer writes whole and then skips
 # forever, still carrying what an older version of this protocol wrote.
 #
 # Exit 1 if anything is wrong. Nothing here prints a policy file's contents: a denylist read
@@ -35,26 +37,82 @@ note() { printf "  note  %s%s\n" "$1" "${2:+  — $2}"; }
 
 echo "tenant:   $TENANT"
 
-# 1. The pin. A tenant that does not pin is not drifting, so an absent or unfilled file is silence
-# rather than a fault; what is a fault is a file that states a tag the checkout is not at.
+# 1. The protocol. `.protocol/protocol-version` is the receipt `bin/adapt` wrote: which commit of the
+# protocol the files in this tenant came from. Which protocol judges a commit is a different
+# question — decided live by the `protocol/` symlink, at the moment of the commit — so the two are
+# asked separately rather than through one number that can only ever answer the second.
 P="$TENANT/protocol"
 V="$TENANT/.protocol/protocol-version"
-want="$(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$V" 2>/dev/null | head -1 | tr -d '[:space:]')"
+read -r ref sha _rest <<<"$(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$V" 2>/dev/null | head -1)"
 if [ ! -d "$P/doctrine" ]; then
   bad "protocol/ does not resolve to a protocol checkout" "run this repository's bin/adapt from the protocol"
-elif [ -z "$want" ]; then
-  note "protocol not pinned" "write the tag in .protocol/protocol-version"
+elif [ -z "$ref" ]; then
+  bad "no protocol recorded" "run the protocol's bin/adapt from here — it writes .protocol/protocol-version"
+elif [ "$ref" = unknown ]; then
+  # `bin/adapt` writes this when it is run from a checkout with no history to read. It is a note for
+  # the same reason it was written: nothing is wrong, and there is nothing here to check against.
+  note "protocol recorded as unknown" "bin/adapt ran from a protocol with no history"
 elif [ ! -e "$P/.git" ]; then
-  # `bin/adapt --copy` leaves a directory with no history, which nothing can date. Say so once
-  # rather than reporting the pin as broken on every machine that needed the copy.
-  note "protocol is a copy, not a clone" "the pin at $want cannot be checked"
-else
-  have="$(git -C "$P" describe --tags --exact-match 2>/dev/null)"
-  if [ "$have" = "$want" ]; then ok "protocol pinned at $want"
-  elif [ -z "$have" ]; then
-    bad "protocol is not at a tag, pinned to $want" "git -C \"$P\" fetch --tags && git -C \"$P\" checkout $want"
+  # `bin/adapt --copy` leaves a directory with no history, which nothing can date. Say so once rather
+  # than reporting every question below as unanswered on a machine that needed the copy.
+  note "protocol is a copy, not a clone" "what $ref is now cannot be read from here"
+elif git -C "$P" rev-parse --verify -q "refs/heads/$ref" >/dev/null; then
+  # A branch: the tenant tracks it, and the question is whether this checkout is on it and level with
+  # what the last fetch left at origin. Nothing here reaches the network — a check that does is a
+  # check that fails on a plane, and it would be answering a question nobody asked at commit time.
+  on="$(git -C "$P" symbolic-ref --short -q HEAD)" || on=""
+  if [ -z "$on" ]; then
+    bad "protocol is detached, recorded on $ref" "git -C \"$P\" checkout $ref"
+  elif [ "$on" != "$ref" ]; then
+    bad "protocol is on $on, recorded on $ref" "git -C \"$P\" checkout $ref"
+  elif ! git -C "$P" rev-parse --verify -q "refs/remotes/origin/$ref" >/dev/null; then
+    note "protocol on $ref, with no origin/$ref to compare against" "git -C \"$P\" fetch"
   else
-    bad "protocol is at $have, pinned to $want" "git -C \"$P\" checkout $want"
+    behind="$(git -C "$P" rev-list --count "HEAD..origin/$ref" 2>/dev/null || echo 0)"
+    if [ "$behind" -gt 0 ]; then
+      note "protocol is $behind commit(s) behind origin/$ref" "git -C \"$P\" pull --ff-only"
+    else
+      ok "protocol tracking $ref, current"
+      # Current with what, though: origin/$ref is whatever the last fetch left behind. A tip that has
+      # not moved in a fortnight is either a quiet protocol or a stale fetch, and from here those two
+      # look identical — so the age is reported rather than silently read as the first.
+      tip="$(git -C "$P" log -1 --format=%ct "origin/$ref" 2>/dev/null)" || tip=""
+      if [ -n "$tip" ]; then
+        age=$(( ( $(date +%s) - tip ) / 86400 ))
+        [ "$age" -lt 14 ] || note "origin/$ref has not moved in $age days" "git -C \"$P\" fetch, if that is not what you expect"
+      fi
+    fi
+  fi
+elif ! git -C "$P" rev-parse --verify -q "refs/tags/$ref" >/dev/null &&
+     at="$(git -C "$P" rev-parse -q --verify "$ref^{commit}" 2>/dev/null)"; then
+  # A bare commit, which is what `bin/adapt` records when it is run out of a checkout that is on no
+  # branch and at no tag — a CI runner's, most often. There is nothing to be behind, so the only
+  # question left is whether the checkout is still the one the receipt names.
+  if [ "$at" = "$(git -C "$P" rev-parse HEAD)" ]; then ok "protocol at $ref, on no branch"
+  else bad "protocol has moved off the commit recorded here" "git -C \"$P\" checkout $ref"; fi
+else
+  # A tag, or a name this checkout no longer has. A tenant may still pin deliberately — the protocol
+  # keeps cutting tags for breaking changes — and the check a pin wants is the one made here all along.
+  have="$(git -C "$P" describe --tags --exact-match 2>/dev/null)"
+  if [ "$have" = "$ref" ]; then ok "protocol pinned at $ref"
+  elif [ -z "$have" ]; then
+    bad "protocol is not at a tag, pinned to $ref" "git -C \"$P\" fetch --tags && git -C \"$P\" checkout $ref"
+  else
+    bad "protocol is at $have, pinned to $ref" "git -C \"$P\" checkout $ref"
+  fi
+fi
+
+# The other half of the receipt, and the reason it records a commit and not just a branch: the files
+# installed here — the shim, the seeded policy files, the adapter launchers — came from one commit,
+# and the checkout has moved since. Nothing is broken, because `protocol/` is what judges a commit
+# and it is current; what is stale is everything `bin/adapt` copied in and now skips forever.
+if [ -n "$sha" ] && [ -d "$P/doctrine" ] && [ -e "$P/.git" ]; then
+  at="$(git -C "$P" rev-parse -q --verify "$sha^{commit}" 2>/dev/null)" || at=""
+  now="$(git -C "$P" rev-parse HEAD 2>/dev/null)" || now=""
+  if [ -z "$at" ]; then
+    note "the commit bin/adapt recorded ($sha) is not in this checkout" "git -C \"$P\" fetch, then re-run bin/adapt from here"
+  elif [ "$at" != "$now" ]; then
+    note "protocol has moved since bin/adapt last ran here" "re-run the protocol's bin/adapt from here"
   fi
 fi
 
@@ -80,7 +138,8 @@ fi
 
 # The shim decides which checkout of the protocol the guards come from, and a tenant carrying one
 # from before this step existed reads its doctrine from one checkout and runs its guards from
-# another — the well-known path, which is one per machine and cannot serve two pins.
+# another — the well-known path, which is one per machine, where a tenant's own `protocol/` is one
+# per repository and is the checkout the rest of this file has just reported on.
 #
 # Asked only of a shim that came from `tenant-template/`, which every version of it has named
 # `PROTOCOL_GUARDS` in. A tenant that wrote its own shim resolves the guards its own way — through a
@@ -99,7 +158,8 @@ fi
 
 # A launcher is not a seed: the tenant does not own it, the adapter writes it whole, and `bin/adapt`
 # skips it forever after because it exists. So a tenant installed before the adapter changed keeps
-# the old one with nothing to see — the same shape of drift as the pin, one directory down.
+# the old one with nothing to see — the drift the receipt above reports, one directory down, for the
+# one file the receipt cannot speak for because no seed ever wrote it.
 while IFS= read -r src; do
   agent="$(basename "$(dirname "$src")")"
   dst="$TENANT/.agents/$agent/run"

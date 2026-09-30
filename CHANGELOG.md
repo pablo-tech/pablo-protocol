@@ -4,24 +4,47 @@ All notable changes to the protocol and its mechanism are documented here. This 
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 **A tag here is a marker, not a distribution.** Nothing is published to a registry; a consumer
-clones this repository and pins a tag or a commit, and a tag exists only so that commit has a
-human-readable name. This file is where you find out what moving your pin would get you.
+clones this repository and tracks a branch, or checks out a tag or a commit if they would rather
+not move with it. A tag exists only so that one commit has a human-readable name. This file is
+where you find out what pulling gets you.
 
-Breaking changes are named as such. A change to the doctrine frontmatter contract, to the guard
-resolution order, to a policy file's name or meaning, or to the adapter contract breaks every
-consumer on the bump they had no reason to read carefully — it happens in a major version and is
-announced here first.
+Breaking changes are named as such, and are what a tag is now cut for. A change to the doctrine
+frontmatter contract, to the guard resolution order, to a policy file's name or meaning, or to the
+adapter contract breaks every consumer the moment they pull, so it is announced here first and
+given a version number — a name for the commit before it, which a consumer who would rather not
+move with `main` can stop at.
 
 ## [Unreleased]
 
+### Changed
+
+- **`.protocol/protocol-version` is a receipt rather than a pin, and a tenant is expected to track
+  a branch** (breaking: a policy file's meaning changes — `ARCHITECTURE.md` §11). The file used to
+  hold a tag a tenant wrote and moved by hand, and was read as the answer to which protocol judges
+  that tenant's commits. It could never be that answer: `protocol/` is a symlink, and what judges a
+  commit is whatever that symlink resolves to at the moment of the commit, with no file in the
+  tenant changing when it moves. So the two questions are separated. `bin/adapt` now **rewrites**
+  the file on every run — printed as `record`, in place of the `skip` and the never-shipped `keep`
+  — with `<ref> <short-sha> <date>` read out of the checkout it ran from, which answers only the
+  question it can: which protocol the files installed in this tenant came from. Every field being
+  derived from that checkout is what keeps the run idempotent, so a second run from the same commit
+  still leaves the tenant byte for byte as it was.
+
+  `bin/doctor` asks the other question live. Where the recorded ref is a branch it reports whether
+  `protocol/` is still on it and how far behind `origin/<ref>` the last fetch left it, as a note —
+  being behind breaks nothing until you commit against doctrine you have not read — and it says how
+  old that ref's tip is, so "current" cannot quietly mean current with a stale fetch. **Where the
+  ref is a tag, the check is exactly the one made before**, so a consumer who would rather pin
+  changes nothing but keeps getting fixes only when they move. Either way it reports separately when
+  the checkout has moved past the commit recorded, which is the install going stale rather than the
+  protocol.
+
+  **For a tenant:** check the protocol clone out on `main`, re-run `bin/adapt`, and commit the line
+  it writes. Do not hand-edit that line again — it claims an install that never happened, and the
+  next run overwrites the claim.
+
 ### Fixed
 
-- **`bin/adapt` reported the pin file as skipped twice in one run, and neither line said what the
-  pin was.** Seeding that file and keeping the version written in it are two answers to two
-  questions — the file is there, and the pin in it stands — but both printed `skip
-  .protocol/protocol-version`, so one path appeared twice under one word and read as the installer
-  repeating itself. The second answer is now `keep <version>`, which names the pin the run left
-  alone. Nothing about the pin itself changed: an existing value is still never rewritten.
 - **The well-known path was reported as an absolute home directory rather than `~/...`.** In
   `${var/pat/repl}` an unquoted `~` in the replacement half is tilde-expanded back to `$HOME`, so
   the one line written to shorten a home path printed it in full, on every run, for every tenant.

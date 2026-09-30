@@ -7,8 +7,10 @@
 # well-known path `bin/adapt` symlinks to whatever clone this machine uses.
 #
 # The tenant's own entry comes before the well-known path because the well-known path is one per
-# machine. A machine holding two tenants at two pins cannot serve both from it, and the half that
-# loses is silent: the doctrine read is one version and the guards run are another.
+# machine and a tenant's `protocol/` is one per repository. Where the two resolve to different
+# checkouts — one tenant pinned to a tag while the machine tracks a branch, or two tenants wired to
+# separate clones — the half that loses is silent: the doctrine read is one checkout and the guards
+# run are another.
 #
 # Enable on a fresh clone:  git config core.hooksPath .githooks
 # Emergency bypass:         git commit --no-verify

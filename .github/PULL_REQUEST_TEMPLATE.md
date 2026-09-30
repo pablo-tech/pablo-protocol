@@ -20,6 +20,7 @@ Tick only what applies:
       closed when a guard is missing (§3, §4).
 - [ ] An adapter creates but never edits a file the tenant already has, and copies no protocol
       content into the agent's own configuration directory (§7).
-- [ ] `bin/adapt` is still idempotent: a second run prints only `skip`.
+- [ ] `bin/adapt` is still idempotent: a second run installs nothing and leaves the tenant byte for
+      byte as it was — `skip` per file, and the one `record` that rewrites the same bytes.
 - [ ] [CHANGELOG.md](../CHANGELOG.md) has an entry under `[Unreleased]` for anything a consumer
-      would notice on moving their pin.
+      would notice on their next pull.

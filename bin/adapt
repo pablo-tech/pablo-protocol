@@ -15,7 +15,7 @@
 #   <tenant>/.protocol/tenant  the denylist naming the tenants this repository is not
 #                              (its untracked `.local` overlay is gitignored, never seeded)
 #   <tenant>/.protocol/protocol-version
-#                              the tag of this protocol the tenant consumes, written on install
+#                              which commit of this protocol installed the tenant, rewritten each run
 #   <tenant>/.githooks/        the pre-commit shim, and core.hooksPath pointed at it
 #   agent configuration        whatever each detected adapter installs — for Claude Code, one skill
 #                              per doctrine file and the commands under adapters/claude-code/
@@ -68,33 +68,34 @@ seed() { # path — the tenant-template's copy of it, if the tenant has none of 
   say seed "$rel"
 }
 
-# The tag this run installed, written into the pin file the seed above leaves empty.
+# Which commit of this protocol this run installed, written into the file the seed above leaves
+# holding only its header.
 #
-# `protocol/` is a symlink, so the checkout behind it can be moved on and no file in the tenant
-# changes — a drift with no signal. The pin is that signal, and `bin/doctor` is what reads it back.
-# An existing value is never rewritten: moving a pin is a deliberate act, not a side effect of
-# re-running the installer from whatever the developing checkout happens to be at.
-UNPINNED='# unpinned: installed from a checkout that was not at a tag'
-pin() {
-  local rel=.protocol/protocol-version have
-  # `keep`, not `skip`: the seed above has already reported this very path as skipped, and one file
-  # reported twice under one word reads as a bug in the installer. These are two answers to two
-  # questions — the file is there, and the pin in it stands — so the second one says which pin.
-  have="$(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$TENANT/$rel" 2>/dev/null | head -1)"
-  if [ -n "$have" ]; then say keep "$have"; return; fi
-  have="$(git -C "$PROTOCOL" describe --tags --exact-match 2>/dev/null)" || have=""
-  if [ -n "$have" ]; then
-    printf '%s\n' "$have" >>"$TENANT/$rel"
-    say pin "$have"
-  # A checkout that is not at a tag has nothing to pin to. Saying so in the file beats writing a
-  # commit SHA that reads like a version and answers no question about what moving it would get you,
-  # and it is a comment, so a later run from a tagged checkout still writes the tag underneath it.
-  elif grep -qxF -- "$UNPINNED" "$TENANT/$rel" 2>/dev/null; then
-    say keep unpinned
-  else
-    printf '%s\n' "$UNPINNED" >>"$TENANT/$rel"
-    say pin "unpinned"
-  fi
+# This is a receipt, not a pin. It answers one question — which protocol the files in this tenant
+# came from — and it is rewritten on every run, because a receipt that states an install other than
+# the last one is the drift it exists to report. What judges a commit is a separate question, asked
+# live of `protocol/` by `bin/doctor`, because that symlink can be moved with no file here changing.
+#
+# The line is derived entirely from the checkout, so two runs from the same commit write the same
+# bytes and a second run really does change nothing.
+record() {
+  local rel=.protocol/protocol-version ref sha when line head
+  ref="$(git -C "$PROTOCOL" symbolic-ref --short -q HEAD 2>/dev/null)" || ref=""
+  # Detached at a tag is how a consumer who pins one checks out, and the tag is the more useful name
+  # for that commit than the branch it is not on.
+  [ -n "$ref" ] || { ref="$(git -C "$PROTOCOL" describe --tags --exact-match 2>/dev/null)" || ref=""; }
+  sha="$(git -C "$PROTOCOL" rev-parse --short HEAD 2>/dev/null)" || sha=""
+  when="$(git -C "$PROTOCOL" log -1 --format=%as 2>/dev/null)" || when=""
+  [ -n "$ref" ] || ref="$sha"
+  # No history to read: an archive rather than a clone. Saying so beats writing a name that cannot be
+  # checked, and `bin/doctor` reports it as a note rather than a fault for the same reason.
+  if [ -z "$sha" ]; then line="unknown"; else line="$ref $sha $when"; fi
+  # Rewrite, keeping the header the template carries: a file that appended one line per run would
+  # answer the question with a history nobody asked for, and the first line is what every reader takes.
+  head="$(sed '/^[[:space:]]*[^#[:space:]]/d' "$TENANT/$rel")"
+  if [ -n "$head" ]; then printf '%s\n%s\n' "$head" "$line" >"$TENANT/$rel"
+  else printf '%s\n' "$line" >"$TENANT/$rel"; fi
+  say record "$line"
 }
 
 echo "protocol: $PROTOCOL"
@@ -126,7 +127,7 @@ ignore "/protocol" "/.protocol/*.local"
 seed AGENTS.md
 seed .protocol/tenant
 seed .protocol/protocol-version
-pin
+record
 seed .githooks/pre-commit
 chmod +x "$TENANT/.githooks/pre-commit"
 

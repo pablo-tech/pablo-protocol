@@ -32,7 +32,7 @@ carries five things, all of which `bin/adapt` installs:
 | `protocol/` | this repository, symlinked; gitignored, being a machine-local path | the installer |
 | `AGENTS.md` | the tenant's own facts, and a pointer to `protocol/AGENTS.md` | the tenant |
 | `.protocol/*` | one file per guard policy the tenant opts into (§3) | the tenant |
-| `.protocol/protocol-version` | the tag of this protocol the tenant consumes (§11) | written on install, moved by the tenant |
+| `.protocol/protocol-version` | which commit of this protocol installed the tenant (§11) | the installer, rewritten every run |
 | `.githooks/pre-commit` | the shim that runs `protocol/guards/guards.sh` (§5) | seeded, then the tenant's |
 
 Nothing in this repository knows the name of any tenant, and nothing in a tenant repository is
@@ -98,15 +98,16 @@ decision the shim owns rather than `guards.sh`:
 1. `PROTOCOL_GUARDS`, if set — an explicit override, for a checkout under test.
 2. `<repo>/guards/guards.sh`, if it exists — this repository guarding itself.
 3. `<repo>/protocol/guards/guards.sh`, if it exists — the checkout this repository's own doctrine
-   is read from, which is the one its pin (§11) names.
+   is read from, and so the one its receipt (§11) names.
 4. `${PROTOCOL_DIR:-$HOME/.pablo-protocol}/guards` — the well-known path `bin/adapt` symlinks to
    whatever clone the machine uses.
 
-Step 3 exists because step 4 is **one path per machine**. A machine holding two tenants at two
-pins has one well-known path between them, so without step 3 one of the two is judged by the
-other's guards — a tenant reading its doctrine from one checkout and being refused, or not
-refused, by another. The tenant's own `protocol/` entry is per tenant and always agrees with what
-that tenant reads.
+Step 3 exists because step 4 is **one path per machine**, where a tenant's own `protocol/` is one
+per repository. Where the two resolve to different checkouts — one tenant that pins a tag while
+the machine tracks a branch, or two tenants wired to separate clones — step 4 alone would judge
+one of them by the other's guards, a tenant reading its doctrine from one checkout and being
+refused, or not refused, by another. Step 3 is the entry that always agrees with what that tenant
+reads, because it is the same entry it reads through.
 
 The well-known path is what keeps a machine-local path out of every tenant's committed hook.
 `bin/adapt` creates it and **never repoints an existing one**: where it already exists, that is
@@ -157,8 +158,8 @@ An adapter is a directory under `adapters/` holding `detect.sh`, `adapt.sh` and 
   `adapters/cortex/run` is the example: tracked here, copied into the tenant unchanged, and so
   covered by the sweep that shellchecks every tracked file with a shebang. A script written from a
   string inside another script is a script no checker can see, and the tenant runs it anyway.
-  `bin/doctor` compares each `adapters/*/run` with the tenant's copy for the same reason the pin is
-  compared with the checkout: the adapter writes the file whole and `bin/adapt` then skips it
+  `bin/doctor` compares each `adapters/*/run` with the tenant's copy for the same reason the receipt
+  is compared with the checkout: the adapter writes the file whole and `bin/adapt` then skips it
   forever, so a tenant installed before the adapter changed keeps the old one silently. It reports
   the difference as a note, because a tenant may have meant it.
 
@@ -167,10 +168,11 @@ The guarantee a consumer may rely on: **deleting every adapter leaves the protoc
 
 ## 8. `bin/adapt` is idempotent and additive
 
-It skips anything already present, prints one line per change, and never removes or rewrites. A
-second run changes nothing, and says so twice over: `skip` for each file already there, and `keep`
-for the pin in `.protocol/protocol-version`, which is a separate question from whether that file
-exists and so gets its own word rather than a second `skip` on the same path. `--copy` substitutes copies for symlinks throughout, for a machine
+It skips anything already present, prints one line per change, and never removes anything. A second
+run installs nothing: `skip` for each file already there. The one file it rewrites rather than skips
+is the receipt in `.protocol/protocol-version` (§11), printed as `record`, and every field of that
+line is read out of the protocol checkout — so a second run from the same commit writes the same
+bytes and the tenant is left byte for byte as it was. `--copy` substitutes copies for symlinks throughout, for a machine
 that will not follow a link or whose agent configuration directory is centrally managed; it
 dereferences on copy, because the machine that needs `--copy` is exactly the machine that cannot
 read a link.
@@ -195,8 +197,9 @@ them individually is the kind of thing that passes its own unit test and is wire
   reads, what it sends to a model, or what it writes outside a repository.
 - **Secret storage.** The credentials guard refuses to let a secret into a commit. Where secrets
   live and how a process receives them belongs to the tenant.
-- **A package registry.** Nothing here is published to one. Consumers clone and pin a tag or a
-  commit; a tag is a human-readable name for one commit, not a distribution channel.
+- **A package registry.** Nothing here is published to one. Consumers clone this repository and
+  track a branch, or check out a tag or a commit if they would rather not move with it; a tag is a
+  human-readable name for one commit, not a distribution channel.
 - **Configuration merging.** No adapter merges into a file a tenant wrote (§7). There is
   deliberately no schema-aware merge of an agent's settings file, because a tool that rewrites a
   person's configuration is a tool they stop running.
@@ -210,20 +213,35 @@ them individually is the kind of thing that passes its own unit test and is wire
   `.protocol/tenant` is exempt from the scan it configures, which is why keeping the names out of
   the tracked half is structural rather than a habit.
 
-## 11. A tenant pins a version, and the pin is a file rather than a fact about a directory
+## 11. A tenant records which protocol installed it, and the record is a receipt rather than a pin
 
-`protocol/` is a symlink. The checkout behind it can be moved to another tag by whoever develops
-this protocol, and no file in the tenant changes — the tenant would read different doctrine and be
-judged by different guards with nothing to see in a diff. `.protocol/protocol-version` is the
-signal: the tag written down, one line, the first that is neither blank nor a whole-line comment.
+`protocol/` is a symlink. The checkout behind it can be moved by whoever develops this protocol and
+no file in the tenant changes — the tenant would read different doctrine and be judged by different
+guards with nothing to see in a diff. That is two questions wearing one answer, and they separate
+cleanly:
 
-`bin/adapt` writes that line on install, from `git describe --tags --exact-match` of the checkout
-it is installing, or a `# unpinned` comment when that checkout is not at a tag. It **never
-rewrites an existing value.** Moving a pin means reading what changed, checking the protocol out
-at the new tag, and editing the file — three deliberate acts, rather than a side effect of
-re-running the installer.
+1. **Which protocol judges a commit.** Decided live, by following `protocol/` at the moment of the
+   commit. No file in the tenant can answer it, because no file in the tenant changes when the
+   answer does.
+2. **Which protocol installed the files that are here** — the shim, the seeded policy files, the
+   agent launchers, each written once and skipped forever after. Frozen at the last `bin/adapt` run.
 
-`bin/doctor`, run in a tenant, is what compares the two and says so when they disagree. It also
+`.protocol/protocol-version` answers the second, and only the second. One line, the first that is
+neither blank nor a whole-line comment: `<ref> <short-sha> <date>`, where `ref` is the branch the
+installing checkout was on, or the tag it was exactly at, or the bare commit when it was on
+neither. `bin/adapt` **rewrites it on every run**, because a receipt stating an install other than
+the last one is precisely the drift it exists to report; every field comes from the checkout, so
+two runs from the same commit write the same bytes. It is not edited by hand — an edit claims an
+install that never happened, and the next run overwrites the claim.
+
+`bin/doctor` asks the first question live and reads the second off that line. Where the ref names a
+branch, it reports whether `protocol/` is still on it and how far behind `origin/<ref>` the last
+fetch left it — a note, because being behind breaks nothing until you commit against doctrine you
+have not read. Where it names a tag, it checks the checkout is at that tag, which is the whole of
+what a consumer who would rather pin wants. Either way it reports separately when the checkout has
+moved past the commit recorded, because that is the install going stale rather than the protocol.
+
+`bin/doctor`, run in a tenant, also
 reports the failures that are otherwise silent because nothing reads them until something else
 fails: a skill symlink whose target has moved, `core.hooksPath` unset in a fresh clone, and a
 `.protocol/tenant` that parses to zero terms. It counts those terms and never prints one, for the

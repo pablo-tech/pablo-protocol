@@ -13,7 +13,7 @@ existing. `shellcheck` is run in CI over every script and is worth having locall
 [ARCHITECTURE.md](ARCHITECTURE.md) is the contract behind all of it — read it before changing a
 guard, an adapter or the installer, because most of what looks like an odd choice is §-numbered
 there with its reason. [CHANGELOG.md](CHANGELOG.md) gets an entry under `[Unreleased]` for
-anything a consumer would notice on moving their pin.
+anything a consumer would notice on their next pull.
 
 ## Inbound contributions are under the MIT licence, certified by a sign-off
 
