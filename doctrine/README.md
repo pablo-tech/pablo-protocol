@@ -92,6 +92,10 @@ enforcement here lives in git: a rule inside an agent stops one command in one t
 pre-commit hook judges the diff and so binds every agent equally, including the ones that do not
 exist yet.
 
+The same chapter says where a defect in the protocol gets reported: as an issue in the tenant's own
+repository rather than as a pull request here, because the tenant's repository is the only place the
+control that protects the tenant is running at the moment the report is written.
+
 ### [One knob per diff](llm-output-trust.md)
 
 > Don't bundle a model swap with a prompt change in the same diff. If quality changes, you cannot
