@@ -206,7 +206,7 @@ what the repository is protecting — [`ARCHITECTURE.md`](ARCHITECTURE.md) §3.
 | [`bin/adapt`](bin/adapt) | the installer, idempotent, `--copy` for a machine that will not follow symlinks |
 | [`adapters/`](adapters/) | one small directory per AI coding agent, each holding `detect.sh` and `adapt.sh` |
 | [`tenant-template/`](tenant-template/) | the files a new tenant starts from, each one a seed to edit |
-| [`bin/doctor`](bin/doctor) | run inside a tenant: which protocol it is on and how far behind, the symlinks, the hook, the denylist and each installed launcher, checked against what is on disk |
+| [`bin/doctor`](bin/doctor) | run inside a tenant: which protocol it is on and how far behind, the symlinks, the hook, the denylist and each installed launcher, checked against what is on disk. Run against a repository worked on under a tenant (`--in <dir>`), the same questions with the answers that shape has: the guards its shim resolves instead of a `protocol/` it is not supposed to carry, and the tenant's identity list it is held to |
 
 A guard reads its policy from a file the *tenant* carries under `.protocol/`, and a guard whose
 policy file is absent exits 0. That is what makes one shared chain safe to point at any checkout:

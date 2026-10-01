@@ -84,6 +84,19 @@ and inheriting those would hand a repository the tenant's holes. The rule stands
 repository that carries `.protocol/identity` is judged by it and by nothing else, empty or not,
 because carrying the file is how a repository opts in and an empty one claims nobody.
 
+**`bin/doctor --in <dir>` reads this shape rather than a tenant missing its install.** It is the one
+place the wiring above is visible at all, local configuration being invisible in a tree, and before
+it knew the shape it reported a correctly wired repository as a broken tenant and named `bin/adapt`
+as the remedy — the one command that must never be run there. What it reports instead: the checkout
+the **shim** resolves, which is what decides the guards where there is no `protocol/`, together with
+a note where that checkout and the one the tenant reads its doctrine from are not at the same commit
+— two separate checkouts is what every machine has, so the commits are what is compared and the
+paths are what the note names; the two can differ deliberately, one tenant pinned to a tag while the
+machine tracks a branch, and whichever loses does so silently; the identity list from whichever file
+the guard would read, named by path; and a `pabloProtocol.tenant` pointing at a directory that is
+not a tenant, which resolves to nothing in every guard and so leaves the repository held to no
+policy while every outward sign says it is wired.
+
 The policy files in use:
 
 | File | Guard | Contents |
@@ -280,3 +293,11 @@ reports the failures that are otherwise silent because nothing reads them until 
 fails: a skill symlink whose target has moved, `core.hooksPath` unset in a fresh clone, and a
 `.protocol/tenant` that parses to zero terms. It counts those terms and never prints one, for the
 reason §3 gives.
+
+Where there is no receipt to read, because the repository is one worked on under a tenant rather
+than a tenant, the first question is still which protocol judges a commit — and the shim answers
+it. So
+`bin/doctor` resolves the guards the way `tenant-template/.githooks/pre-commit` does, in that order,
+and reports the checkout it lands on. That duplicates the shim's order in a second place, which is a
+cost paid deliberately: the shim ends in an `exec` of the chain against the index, so the only way
+to report what it would resolve without committing is to resolve it again.

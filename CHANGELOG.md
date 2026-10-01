@@ -90,6 +90,34 @@ move with `main` can stop at.
 
 ### Fixed
 
+- **`bin/doctor` reads a repository worked on under a tenant as the shape it is, instead of as a
+  tenant whose install is broken.** Such a repository is given the guard chain and nothing else, so
+  it carries no `protocol/` and no `.protocol/` — and the file reported that as `protocol/ does not
+  resolve to a protocol checkout`, offering `bin/adapt` as the remedy, which is the one command that
+  shape exists to avoid. It also read `.protocol/identity` from the repository alone and reported
+  that nothing claimed its commits, while the identity guard was already holding them to the
+  tenant's list and refusing one that did not match: two answers about the same commit, from the
+  same checkout. With `pabloProtocol.tenant` set and no `protocol/` entry, the first question is now
+  answered where the answer actually comes from — the shim, resolved in its own order, with the
+  checkout it lands on named — and the identity is resolved the way `guards/identity-guard.sh`
+  resolves it, naming the file it is held to. A `pabloProtocol.tenant` pointing at something that is
+  not a tenant is reported too, because it resolves to nothing in every guard that reads it and
+  leaves the repository held to no policy while looking wired. So `doctor: 0 problem(s)` is now a
+  usable gate there, where before it was always at least one.
+- **`bin/doctor` reports when the guards that judge a commit are a different version of the protocol
+  from the doctrine its tenant reads.** A repository with no `protocol/` of its own resolves its
+  guards from the well-known path, which is one per machine where a tenant's `protocol/` is one per
+  repository, and the shim's own header has always said the half that loses is silent. It is now a
+  note naming both checkouts and the commit each is at — not a fault, because a tenant pinned to a
+  tag while the machine tracks a branch is a decision and the two cannot be told apart from here.
+  Two separate checkouts is what every machine has, so what is compared is the commits: a note that
+  keyed on the paths differing would fire on every correctly wired machine, which is the kind of
+  check people learn to scroll past. Where one side is a copy with no history, that is said rather
+  than read as agreement nobody checked.
+- Nothing above changes what is reported for a tenant, or for a repository that is neither a tenant
+  nor wired to one: that repository still gets the same failure and the same `bin/adapt` remedy,
+  which is correct there, because a repository meant to be a tenant is one the installer has not run
+  in yet.
 - **`bin/adapt` prints the well-known path as `~/.pablo-protocol` under every bash, not `'~'/…`
   under the one macOS ships.** The line that shortens a home path used `${var/#"$HOME"/'~'}`; the
   quotes are what stop the `~` being expanded straight back to `$HOME`, and honouring them is a

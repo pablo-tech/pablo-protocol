@@ -4,14 +4,25 @@
 #   bin/doctor                  check the current directory
 #   bin/doctor --in <dir>       check that directory
 #
+# Two shapes answer to this, and some of the questions below mean a different thing in each. A tenant
+# carries `protocol/` and `.protocol/`, put there by bin/adapt. A repository worked on under a tenant
+# is deliberately not a tenant — it is given the guard chain and nothing else, so it carries neither,
+# and local git configuration is the only place it records which tenant it is worked on under
+# (`pabloProtocol.tenant`, see guards/policy.sh). Running bin/adapt there is the thing that shape
+# exists to avoid, so it is never offered here as the remedy for anything.
+#
 # Five questions, each of which has a silent wrong answer:
-#   the protocol   `protocol/` is a symlink, so the checkout behind it can move with no file here
-#                  changing — and a tenant that tracks a branch can also simply be behind it
+#   the protocol   which checkout of the protocol judges a commit here. A tenant answers with
+#                  `protocol/`, a symlink, so the checkout behind it can move with no file here
+#                  changing — and a tenant that tracks a branch can also simply be behind it. A
+#                  worked-on repository has no `protocol/`, so its shim answers instead, and where
+#                  the shim lands on a checkout other than its tenant's both are named
 #   the links      a skill whose target has moved still lists, and fails only when something reads it
 #   the hook       core.hooksPath does not travel with a clone, so a fresh clone runs no guards
 #   the tenancy    a denylist that parses to zero terms polices nothing and says nothing about it
 #   the identity   which name and address a commit here would be made as, which is configured per
-#                  machine and does not travel with a clone
+#                  machine and does not travel with a clone — and whose list it is held to, which for
+#                  a worked-on repository is its tenant's, the fallback the guard itself makes
 #
 # And two that are notes rather than faults, because neither breaks anything today: a protocol that
 # has moved on since `bin/adapt` last ran here, and a file the installer writes whole and then skips
@@ -35,11 +46,47 @@ done
 TENANT="$(cd "$TENANT" && pwd)" || exit 2
 
 fail=0
-ok()   { printf "  ok    %s\n" "$1"; }
+ok()   { printf "  ok    %s%s\n" "$1" "${2:+  — $2}"; }
 bad()  { printf "  MISS  %s%s\n" "$1" "${2:+  — $2}"; fail=$((fail+1)); }
 note() { printf "  note  %s%s\n" "$1" "${2:+  — $2}"; }
 
-echo "tenant:   $TENANT"
+# Which of the two shapes this is. Resolved through the guards' own `tenant_root`, so that what is
+# reported below is what a guard would resolve rather than a second reading of the same setting.
+#
+# WIRED is the setting as it stands and UNDER is it resolved, because the two differ in exactly the
+# case worth reporting: a setting naming a directory that is not a tenant resolves to nothing, and a
+# repository wired to one is held to no list while looking wired.
+#
+# UNDER is derived whether or not this is a worked-on repository. identity-guard.sh keys its fallback
+# on the identity file being absent rather than on the repository's shape, so a tenant carrying no
+# `.protocol/identity` of its own inherits its tenant's list too — deciding otherwise here would make
+# this file disagree with the guard about the same commit.
+WIRED=""; UNDER=""; WORKED_ON=""
+if [ -e "$TENANT/.git" ]; then
+  WIRED="$(git -C "$TENANT" config --get pabloProtocol.tenant 2>/dev/null || true)"
+  UNDER="$(cd "$TENANT" && . "$PROTOCOL/guards/policy.sh" && tenant_root)" || UNDER=""
+  # No `protocol` entry at all, rather than one that fails to resolve: a dangling `protocol/` symlink
+  # is a tenant whose link has broken, and question 1 has to keep failing for it.
+  if [ -n "$WIRED" ] && [ ! -e "$TENANT/protocol" ] && [ ! -L "$TENANT/protocol" ]; then
+    WORKED_ON=1
+  fi
+fi
+
+if [ -n "$WORKED_ON" ]; then
+  echo "repository: $TENANT"
+  echo "tenant:     ${UNDER:-$WIRED}"
+else
+  echo "tenant:   $TENANT"
+fi
+
+# The wiring itself, asked only where something set it. A directory that is not a tenant resolves to
+# nothing in every guard that reads this setting, so the repository is held to none of that tenant's
+# policy while every outward sign says it is. Asked here rather than inside a question below, so that
+# a repository where git cannot answer the later ones still hears this one.
+if [ -n "$WIRED" ] && [ -z "$UNDER" ]; then
+  bad "pabloProtocol.tenant names $WIRED, which is not a tenant" \
+      "git -C \"$TENANT\" config pabloProtocol.tenant \"<the tenant's path>\""
+fi
 
 # 1. The protocol. `.protocol/protocol-version` is the receipt `bin/adapt` wrote: which commit of the
 # protocol the files in this tenant came from. Which protocol judges a commit is a different
@@ -48,7 +95,52 @@ echo "tenant:   $TENANT"
 P="$TENANT/protocol"
 V="$TENANT/.protocol/protocol-version"
 read -r ref sha _rest <<<"$(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$V" 2>/dev/null | head -1)"
-if [ ! -d "$P/doctrine" ]; then
+if [ -n "$WORKED_ON" ]; then
+  # A worked-on repository has no `protocol/` and no receipt, so the one thing deciding which guards
+  # judge a commit here is its shim — and the order below is that shim's, duplicated from
+  # tenant-template/.githooks/pre-commit rather than executed, because the shim ends in an `exec` of
+  # the chain against the index. A change to that order has to be made in both places, and this
+  # comment is where the second place is.
+  G="${PROTOCOL_GUARDS:-}"
+  [ -n "$G" ] || { [ -x "$TENANT/guards/guards.sh" ] && G="$TENANT/guards"; }
+  [ -n "$G" ] || { [ -x "$TENANT/protocol/guards/guards.sh" ] && G="$TENANT/protocol/guards"; }
+  G="${G:-${PROTOCOL_DIR:-$HOME/.pablo-protocol}/guards}"
+  if [ ! -x "$G/guards.sh" ]; then
+    # The shim's own words, and the shim's own remedy: this is the message a commit here would meet.
+    bad "the shared guards are not at $G/guards.sh" \
+        "clone the protocol and run its bin/adapt, or point PROTOCOL_GUARDS at a checkout of its guards/"
+  else
+    ok "guards resolve to $G"
+    # Which version that is, against the one its tenant reads its doctrine from. Where the two
+    # disagree, the doctrine the tenant holds and the rules these commits are judged by are two
+    # protocols, and nothing else on the machine says so — the shim's own header calls it the half
+    # that loses, silently. A note and not a fault: a tenant pinned to a tag while the machine tracks
+    # a branch is a configuration rather than a defect, and from here the two cannot be told apart.
+    #
+    # Two *paths* is the ordinary shape and not the finding — `bin/adapt` writes the well-known one on
+    # every machine and a tenant's `protocol/` is its own, so a note keyed on the paths differing
+    # would fire on every correctly wired machine, and a check that always fires is one people learn
+    # to scroll past. So the commits are compared, and the paths are what the note names.
+    if [ -n "$UNDER" ] && [ -d "$UNDER/protocol/doctrine" ]; then
+      ran="$(cd "$G/.." && pwd -P)" || ran=""
+      read_from="$(cd "$UNDER/protocol" && pwd -P)" || read_from=""
+      if [ -n "$ran" ] && [ -n "$read_from" ] && [ "$ran" != "$read_from" ]; then
+        at_ran="$(git -C "$ran" rev-parse HEAD 2>/dev/null)" || at_ran=""
+        at_read="$(git -C "$read_from" rev-parse HEAD 2>/dev/null)" || at_read=""
+        if [ -z "$at_ran" ] || [ -z "$at_read" ]; then
+          # `bin/adapt --copy` leaves a directory with no history. The split is still real and is
+          # still the only place it is visible, so it is reported as unanswerable rather than passed
+          # over as agreement nobody checked.
+          note "the guards that judge a commit here are a different checkout from the tenant's doctrine" \
+               "doctrine read from $read_from, guards run from $ran — one of the two has no history to compare"
+        elif [ "$at_ran" != "$at_read" ]; then
+          note "the guards that judge a commit here are a different version from the tenant's doctrine" \
+               "$(printf 'doctrine %.7s from %s, guards %.7s from %s' "$at_read" "$read_from" "$at_ran" "$ran")"
+        fi
+      fi
+    fi
+  fi
+elif [ ! -d "$P/doctrine" ]; then
   bad "protocol/ does not resolve to a protocol checkout" "run this repository's bin/adapt from the protocol"
 elif [ -z "$ref" ]; then
   bad "no protocol recorded" "run the protocol's bin/adapt from here — it writes .protocol/protocol-version"
@@ -181,6 +273,11 @@ elif terms="$(cd "$TENANT" && . "$PROTOCOL/guards/policy.sh" && policy tenant)";
   n="$(printf '%s' "$terms" | grep -c . || true)"
   if [ "$n" -gt 0 ]; then ok "tenancy declared: $n term(s)"
   else note "tenancy declares 0 terms" "the guard exits 0 — .protocol/tenant polices nothing yet"; fi
+elif [ -n "$WORKED_ON" ]; then
+  # Not a gap: a repository worked on under a tenant carries no `.protocol/` to put this in, and of
+  # the policies only the identity list is inherited from the tenant (see guards/policy.sh), so its
+  # tenancy denylist genuinely does not reach here.
+  note "no .protocol/tenant" "a repository worked on under a tenant carries none — only the identity list is inherited"
 else
   note "no .protocol/tenant" "this repository declares no tenancy and is not policed"
 fi
@@ -197,16 +294,35 @@ elif ! ident="$(cd "$TENANT" && git var GIT_AUTHOR_IDENT 2>/dev/null)"; then
 else
   # `Name <email> 1790800093 -0700`; the trailing timestamp is the clock, not who this is.
   ident="${ident% * *}"
-  if allowed="$(cd "$TENANT" && . "$PROTOCOL/guards/policy.sh" && policy identity)" &&
-     [ -n "$allowed" ]; then
-    if printf '%s' "$ident" | grep -qiE -- "$(printf '%s' "$allowed" | paste -sd'|' -)"; then
-      ok "commits here are made as $ident"
+  # Whose list this is, resolved the way guards/identity-guard.sh resolves it rather than from the
+  # repository's own file alone: a repository carrying no list falls back to the list of the tenant it
+  # is worked on under, and one that carries the file is judged by it alone, empty or not — carrying
+  # it is how a repository opts in, and an empty one claims nobody. So the fallback keys on `policy`'s
+  # exit status, which separates "no such file" from "a file claiming nobody"; the two are the same
+  # picture to a test for a non-empty list, and they mean opposite things.
+  whose="this repository"
+  where=".protocol/identity"
+  if ! allowed="$(cd "$TENANT" && . "$PROTOCOL/guards/policy.sh" && policy identity)"; then
+    if [ -n "$UNDER" ]; then
+      allowed="$(cd "$TENANT" && . "$PROTOCOL/guards/policy.sh" && policy identity "$UNDER")" || allowed=""
+      whose="this repository's tenant"
+      where="$UNDER/.protocol/identity"
     else
-      bad "commits here would be made as $ident, which .protocol/identity does not claim" \
-          "git -C \"$TENANT\" config user.email \"<email>\""
+      allowed=""
     fi
+  fi
+  # The file is named and never read out: the identity below is this machine's own git configuration,
+  # which a report that withheld it could not be acted on, where the list is a policy file like any
+  # other and its lines stay unprinted.
+  held=""
+  [ "$whose" = "this repository" ] || held="held to $where"
+  if [ -z "$allowed" ]; then
+    note "commits here are made as $ident" "no identity declared — $where claims none"
+  elif printf '%s' "$ident" | grep -qiE -- "$(printf '%s' "$allowed" | paste -sd'|' -)"; then
+    ok "commits here are made as $ident" "$held"
   else
-    note "commits here are made as $ident" "no identity declared — .protocol/identity claims none"
+    bad "commits here would be made as $ident, which $where does not claim" \
+        "git -C \"$TENANT\" config user.email \"<email>\""
   fi
 fi
 
