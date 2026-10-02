@@ -283,6 +283,10 @@ check "two checkouts of the protocol at the same commit are not remarked on" \
 worked_on
 git clone -q "$pinned" "$t/moved-on"
 rm -f "$under/protocol" && ln -s "$t/moved-on" "$under/protocol"
+# A clone carries no identity, and a runner has no global one to fall back on — so the commit below
+# fails with `empty ident name` where this suite is run by anything but a configured machine.
+git -C "$t/moved-on" config user.email t@example.invalid
+git -C "$t/moved-on" config user.name Test
 git -C "$t/moved-on" commit -q --allow-empty -m "a commit the machine's own checkout does not have"
 # Resolved paths, because the file under test compares resolved ones: two names for one checkout are
 # not a divergence, and `$TMPDIR` is reached through a symlink on macOS, where `$t` is under `/var`
