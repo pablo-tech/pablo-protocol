@@ -59,6 +59,16 @@ notes, without failing, an install left behind by a protocol that has moved on, 
 installer wrote whole and has skipped ever since, still carrying what an older version of this
 protocol put there.
 
+`bin/doctor --in <dir>` asks the same questions of a **repository worked on under a tenant**, which
+is deliberately not a tenant and carries none of those six (see `ARCHITECTURE.md` §3). Two of the
+answers come from somewhere else there: which protocol judges a commit is decided by its shim rather
+than by a `protocol/` it is not supposed to have, so the checkout the shim resolves is what gets
+reported — and noted, where that checkout and the one its tenant reads its doctrine from are not at
+the same commit, two separate checkouts being what every machine has rather than the finding; and
+the identity list it is held to is its tenant's, which is the fallback `identity-guard.sh` makes.
+Running `bin/adapt` there is the thing that shape exists to avoid, so it is never named as the
+remedy.
+
 Anything an agent needs that is true of *this tenant only* — which repository owns what, where its
 credentials live, how its machines are set up — goes in the tenant's own `AGENTS.md`, never here.
 
